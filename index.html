@@ -17,39 +17,61 @@
         
         <!-- 홈 (선택) 화면 -->
         <div id="view-home" class="view active">
-            <div class="logo-container">
-                <img src="logo.svg" alt="withPRO Logo" class="main-logo">
+            <div class="hero-section">
+                <div class="logo-container">
+                    <img src="logo.svg" alt="withPRO Logo" class="main-logo">
+                </div>
+                <h1 class="main-title">KPGA · KLPGA 프로와<br>걷는 18홀의 기적</h1>
+                <p class="main-subtitle">검증된 최고 실력의 프로들과 완벽한 필드레슨을 매칭해 드립니다.</p>
             </div>
-            <h1 class="main-title">KPGA KLPGA 프로와<br>걷는 18홀의 기적</h1>
+            
+            <!-- 탭 스위처 -->
+            <div class="home-tab-switcher">
+                <button id="btn-home-tab-amateur" class="tab-switch-btn active" onclick="app.switchHomeTab('amateur')">골퍼 서비스</button>
+                <button id="btn-home-tab-pro" class="tab-switch-btn" onclick="app.switchHomeTab('pro')">프로 파트너스</button>
+            </div>
             
             <div class="home-layout-container">
-                <!-- 1. 일반 골퍼용 카드 섹션 -->
-                <div class="home-card amateur">
-                    <div class="home-card-header">
-                        <span class="card-tag amateur">Golfer</span>
-                        <h3 class="card-heading">아마추어 골퍼님, 환영합니다!</h3>
+                <!-- 1. 일반 골퍼용 카드 섹션 (기본 활성화) -->
+                <div id="home-tab-content-amateur" class="home-tab-content active">
+                    <div class="premium-hero-card">
+                        <div class="card-glow-bg"></div>
+                        <div class="premium-card-badge">PREMIUM MATCHING</div>
+                        <div class="premium-card-title">품격 있는 동반 라운딩<br>프라이빗 필드레슨</div>
+                        <p class="premium-card-desc">실력과 매너가 확실한 정회원 프로님이 라운딩의 시작부터 홀아웃까지 실시간 밀착 레슨을 제공합니다.</p>
+                        
+                        <button class="btn btn-primary btn-premium-cta" onclick="app.navigate('view-regular')">
+                            필드레슨 프로찾기 <span class="btn-arrow">🏌️‍♂️</span>
+                        </button>
                     </div>
-                    <button class="btn btn-primary full-width btn-toss-bold" onclick="app.navigate('view-regular')">
-                        필드레슨 프로찾기 <span class="btn-arrow">🏌️‍♂️</span>
-                    </button>
-                    <button class="home-sub-link amateur-link" onclick="app.checkMyBookings()">
-                        <span class="sub-link-text">🗓️ 내 예약 및 결제 현황 확인</span>
-                        <span class="sub-link-chevron">→</span>
+
+                    <button class="home-status-link" onclick="app.checkMyBookings()">
+                        <span class="status-link-icon">🗓️</span>
+                        <span class="status-link-text">내 예약 및 실시간 결제 현황 확인</span>
+                        <span class="status-link-chevron">→</span>
                     </button>
                 </div>
 
-                <!-- 2. 레슨 프로용 카드 섹션 -->
-                <div class="home-card pro">
-                    <div class="home-card-header">
-                        <span class="card-tag pro">Partner Pro</span>
-                        <h3 class="card-heading">레슨 프로 전용</h3>
+                <!-- 2. 레슨 프로용 카드 섹션 (숨김) -->
+                <div id="home-tab-content-pro" class="home-tab-content">
+                    <div class="pro-premium-card">
+                        <div class="premium-card-badge pro">PARTNER PRO</div>
+                        <h3 class="pro-card-title">withPRO 파트너 프로</h3>
+                        <p class="pro-card-desc">원하는 일정과 요일에 맞춰 편리하게 필드 레슨 요청을 매칭받고 추가 수익을 창출하세요.</p>
+                        
+                        <button class="btn btn-pro-action-premium" onclick="app.navigate('view-pro')">
+                            레슨 프로로 활동하기 <span class="btn-arrow">→</span>
+                        </button>
                     </div>
-                    <button class="btn btn-pro-action full-width" onclick="app.navigate('view-pro')">
-                        레슨 프로로 활동하기 <span class="btn-arrow">→</span>
-                    </button>
-                    <div class="pro-login-box">
-                        <span class="pro-login-desc">이미 파트너 프로이신가요?</span>
-                        <button class="btn-pro-login" onclick="app.promptProLogin()">토스인증으로 자동 로그인 🏌️‍♂️ →</button>
+                    
+                    <div class="pro-login-premium-card">
+                        <div class="pro-login-info">
+                            <span class="pro-login-label">이미 파트너 프로이신가요?</span>
+                            <span class="pro-login-sublabel">토스인증으로 즉시 로그인하여 일정을 관리하세요.</span>
+                        </div>
+                        <button class="btn-pro-login-premium" onclick="app.promptProLogin()">
+                            토스인증 로그인 ⚡
+                        </button>
                     </div>
                 </div>
             </div>

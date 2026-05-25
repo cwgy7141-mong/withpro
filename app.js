@@ -328,6 +328,30 @@ const app = {
         }
     },
     
+    switchHomeTab: function(tabId) {
+        // 1. 모든 탭 버튼에서 active 클래스 제거
+        document.querySelectorAll('#view-home .tab-switch-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // 2. 모든 탭 콘텐츠에서 active 클래스 제거
+        document.querySelectorAll('#view-home .home-tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // 3. 선택된 탭 버튼 활성화
+        const targetBtn = document.getElementById(`btn-home-tab-${tabId}`);
+        if (targetBtn) {
+            targetBtn.classList.add('active');
+        }
+        
+        // 4. 선택된 탭 콘텐츠 활성화
+        const targetContent = document.getElementById(`home-tab-content-${tabId}`);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+    },
+    
     init: function() {
         // 성별 토글 버튼 이벤트 연동
         const toggleGroups = document.querySelectorAll('.toggle-group');
