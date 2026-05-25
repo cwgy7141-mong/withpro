@@ -652,7 +652,9 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         pro_contact = pro_row['contact'] if pro_row else "-"
                         customer_title = "🎉 필드레슨 프로 매칭 성공!"
                         customer_body = f"[withPRO] '{row['golf_course']}' 필드레슨 프로 매칭이 성공적으로 완료되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n예약을 최종 확정하시려면 아래 예약금 결제(50,000원)를 완료해 주세요."
-                        customer_link = f"http://localhost:8000/index.html?view=my-bookings&id={row['id']}"
+                        proto = self.headers.get('X-Forwarded-Proto', 'http')
+                        host_header = self.headers.get('Host', 'localhost:8000')
+                        customer_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={row['id']}"
                         dispatch_toss_notification(row['user_contact'], customer_title, customer_body, customer_link)
                 else:
                     c.execute("UPDATE lesson_requests SET status = '매칭 대기중', matched_pro_id = NULL WHERE id = ? AND matched_pro_id = ?", (req_id, pro_id))
@@ -718,7 +720,10 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             # 토스 알림톡 발송
             title = "⛳ 필드레슨 매칭 요청 접수 완료"
             body = f"[withPRO] {data.get('userName', '아마추어')}님, '{data.get('golfCourse')}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 토스로 다시 알려드리겠습니다."
-            dispatch_toss_notification(data.get('userContact'), title, body)
+            proto = self.headers.get('X-Forwarded-Proto', 'http')
+            host_header = self.headers.get('Host', 'localhost:8000')
+            user_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={inserted_id}"
+            dispatch_toss_notification(data.get('userContact'), title, body, user_link)
             
             # 디스코드 알림 발송
             fields = {

@@ -1680,33 +1680,83 @@
             copyShareLink: function() {
                 const shareUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?key=${encodeURIComponent(this.currentKey)}`;
                 
-                // 클립보드에 복사 수행
-                navigator.clipboard.writeText(shareUrl).then(() => {
+                function fallbackCopy(text) {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.top = "0";
+                    textArea.style.left = "0";
+                    textArea.style.position = "fixed";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast("✅ 공유 링크가 클립보드에 복사되었습니다!");
+                    } catch (err) {
+                        alert('복사에 실패했습니다. 직접 주소창을 복사해 주세요: ' + text);
+                    }
+                    document.body.removeChild(textArea);
+                }
+
+                function showToast(msg) {
                     const toast = document.getElementById('toast');
-                    toast.innerText = "✅ 공유 링크가 클립보드에 복사되었습니다!";
+                    toast.innerText = msg;
                     toast.classList.add('show');
                     setTimeout(() => {
                         toast.classList.remove('show');
                     }, 2500);
-                }).catch(err => {
-                    alert('링크 복사에 실패했습니다. 직접 주소창을 복사해 주세요.');
-                });
+                }
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        showToast("✅ 공유 링크가 클립보드에 복사되었습니다!");
+                    }).catch(err => {
+                        fallbackCopy(shareUrl);
+                    });
+                } else {
+                    fallbackCopy(shareUrl);
+                }
             },
 
             copyProAcceptLink: function(reqId, proId) {
                 const acceptUrl = `${window.location.protocol}//${window.location.host}/index.html?view=pro-accept&id=${reqId}&pro_id=${proId}`;
                 
-                // 클립보드에 복사 수행
-                navigator.clipboard.writeText(acceptUrl).then(() => {
+                function fallbackCopy(text) {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.top = "0";
+                    textArea.style.left = "0";
+                    textArea.style.position = "fixed";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast("📋 프로 수락 테스트 링크가 클립보드에 복사되었습니다!");
+                    } catch (err) {
+                        alert('복사에 실패했습니다. 직접 주소를 복사해 주세요: ' + text);
+                    }
+                    document.body.removeChild(textArea);
+                }
+
+                function showToast(msg) {
                     const toast = document.getElementById('toast');
-                    toast.innerText = "📋 프로 수락 테스트 링크가 클립보드에 복사되었습니다!";
+                    toast.innerText = msg;
                     toast.classList.add('show');
                     setTimeout(() => {
                         toast.classList.remove('show');
                     }, 2500);
-                }).catch(err => {
-                    alert('링크 복사에 실패했습니다. 직접 주소를 조립해 주세요.');
-                });
+                }
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(acceptUrl).then(() => {
+                        showToast("📋 프로 수락 테스트 링크가 클립보드에 복사되었습니다!");
+                    }).catch(err => {
+                        fallbackCopy(acceptUrl);
+                    });
+                } else {
+                    fallbackCopy(acceptUrl);
+                }
             },
 
             currentMatchReqId: null,
