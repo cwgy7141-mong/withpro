@@ -587,7 +587,7 @@ const app = {
             // 회원 가입 완료 시 자동 로그인 처리 및 My Page 진입 유도
             localStorage.setItem('withpro_pro_cert', cert_number);
             
-            alert("프로 회원 가입 신청이 성공적으로 접수되었습니다! ⛳\n\n제출해 주신 회원 자격 심사(KPGA/KLPGA 정회원 인증) 완료 후 즉시 정식으로 레슨 매칭 활동이 가능합니다.\n\n승인 심사는 통상 1~2영업일이 소요되며, 완료되는 대로 등록된 연락처로 신속히 안내해 드리겠습니다. withPRO 파트너로 함께해 주셔서 진심으로 감사드립니다.");
+            alert("프로 회원 가입 신청이 성공적으로 접수되었습니다! ⛳\n\n제출해 주신 회원 자격 심사(KPGA/KLPGA 회원 인증) 완료 후 즉시 정식으로 레슨 매칭 활동이 가능합니다.\n\n승인 심사는 통상 1~2영업일이 소요되며, 완료되는 대로 등록된 연락처로 신속히 안내해 드리겠습니다. withPRO 파트너로 함께해 주셔서 진심으로 감사드립니다.");
             
             // Firebase FCM 알림 연동 및 토큰 저장 시도
             app.initFirebase(contact, 'pro');
@@ -674,7 +674,7 @@ const app = {
                         <div class="golf-pulsing-ball">⛳</div>
                         <h3 class="overlay-title">프로 매칭을 진행하고 있어요</h3>
                         <p class="overlay-subtitle" style="margin-bottom: 20px;">
-                            withPRO 정회원 프로님들을 대상으로<br>
+                            withPRO 회원 프로님들을 대상으로<br>
                             골퍼님의 일정과 코스에 맞는 최적의 매칭을 조율 중입니다.
                         </p>
                         <div class="my-booking-card" style="width: 100%; text-align: left;">
@@ -727,7 +727,7 @@ const app = {
                                 </li>
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">배정 프로</span>
-                                    <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 정회원 프로 (수락 확인중)</span>
+                                    <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 회원 프로 (수락 확인중)</span>
                                 </li>
                             </ul>
                             <div style="font-size: 13.5px; color: #b45309; line-height: 1.5; font-weight: 600; text-align: center; background-color: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
@@ -759,7 +759,7 @@ const app = {
                                 </li>
                                 <li class="booking-detail-item" style="margin-bottom: 0;">
                                     <span class="booking-detail-label">매칭 프로 자격</span>
-                                    <span class="booking-detail-value" style="color: var(--primary-color);">KPGA/KLPGA 1급 정회원</span>
+                                    <span class="booking-detail-value" style="color: var(--primary-color);">KPGA/KLPGA 회원 프로</span>
                                 </li>
                             </ul>
                         </div>
@@ -1133,7 +1133,7 @@ const app = {
                                 자격번호: ${app.escapeHtml(profile.cert_number)}
                             </div>
                             <div style="font-size: 12.5px; color: #B45309; font-weight: 500; line-height: 1.4;">
-                                ⏳ KPGA/KLPGA 정회원 자격 심사가 안전하게 진행 중입니다. (1~2일 소요)
+                                ⏳ KPGA/KLPGA 회원 자격 심사가 안전하게 진행 중입니다. (1~2일 소요)
                             </div>
                         </div>
                     </div>

@@ -923,7 +923,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         "회원번호": row['cert_number'],
                         "승인 상태": "승인 완료 (활동 개시 가능)"
                     }
-                    send_discord_notification("🏌️‍♂️ KPGA/KLPGA 정회원 프로 파트너 심사 승인 완료", fields)
+                    send_discord_notification("🏌️‍♂️ KPGA/KLPGA 회원 프로 파트너 심사 승인 완료", fields)
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
