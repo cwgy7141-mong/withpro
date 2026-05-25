@@ -78,26 +78,31 @@ body {
     z-index: 2;
 }
 
-/* Home View - Premium & Modern Design */
+/* Home View - Premium & Centered Design */
 #view-home {
     padding: 32px 24px 24px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    align-items: stretch;
+    align-items: center; /* Centered items */
     height: 100%;
     background-color: var(--card-bg);
 }
 
 .hero-section {
     width: 100%;
-    text-align: left;
+    text-align: center; /* Center header content */
     margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .logo-container {
     margin-bottom: 12px;
-    align-self: flex-start;
+    align-self: center; /* Center logo */
+    display: flex;
+    justify-content: center;
 }
 
 .main-logo {
@@ -119,20 +124,20 @@ body {
 }
 
 .main-title {
-    font-size: 25px;
+    font-size: 24px;
     font-weight: 950;
     color: #0d1410;
     letter-spacing: -1px;
-    line-height: 1.35;
+    line-height: 1.38;
     margin-bottom: 8px;
-    text-align: left;
+    text-align: center; /* Center main title */
 }
 
 .main-subtitle {
     font-size: 13.5px;
     color: var(--text-sub);
     line-height: 1.5;
-    text-align: left;
+    text-align: center; /* Center subtitle */
     font-weight: 500;
 }
 
@@ -144,13 +149,15 @@ body {
     padding: 4px;
     margin-bottom: 20px;
     position: relative;
-    border: 1px solid rgba(0, 0, 0, 0.02);
+    border: none;
+    width: 100%;
 }
 
 .tab-switch-btn {
     flex: 1;
     padding: 12px;
-    border: none;
+    border: none !important;
+    outline: none !important;
     background: transparent;
     border-radius: 9999px;
     font-size: 14px;
@@ -167,6 +174,8 @@ body {
     color: var(--primary-color);
     box-shadow: 0 4px 12px rgba(11, 54, 33, 0.06);
     font-weight: 800;
+    border: none !important;
+    outline: none !important;
 }
 
 /* Home Layout Content and Switch Logic */
@@ -192,19 +201,20 @@ body {
     transform: translateY(0);
 }
 
-/* Premium 3D Membership Card */
+/* Premium Membership Card - Ultra-Clean White & Mint Theme */
 .premium-hero-card {
-    background: linear-gradient(135deg, #0b3621 0%, #061e12 100%);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, #ffffff 0%, #f3faf6 100%);
+    color: var(--primary-color);
+    border: 1px solid rgba(11, 54, 33, 0.08);
     border-radius: 24px;
-    padding: 28px 24px;
-    text-align: left;
+    padding: 30px 24px;
+    text-align: center; /* Centered card text */
     position: relative;
     overflow: hidden;
-    box-shadow: 0 20px 48px -12px rgba(11, 54, 33, 0.22);
+    box-shadow: 0 16px 36px -12px rgba(11, 54, 33, 0.06);
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 12px;
 }
 
@@ -214,7 +224,7 @@ body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(0, 199, 117, 0.15) 0%, rgba(0, 0, 0, 0) 65%);
+    background: radial-gradient(circle, rgba(0, 199, 117, 0.08) 0%, rgba(0, 0, 0, 0) 65%);
     pointer-events: none;
     animation: floatGlow 12s infinite alternate ease-in-out;
 }
@@ -225,62 +235,66 @@ body {
 }
 
 .premium-card-badge {
-    align-self: flex-start;
+    align-self: center; /* Centered badge */
     font-size: 10px;
     font-weight: 850;
     padding: 4px 10px;
     border-radius: 6px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    background: rgba(0, 199, 117, 0.12);
-    color: var(--accent-color);
-    border: 1px solid rgba(0, 199, 117, 0.15);
+    background: rgba(11, 54, 33, 0.06);
+    color: var(--primary-color);
+    border: 1px solid rgba(11, 54, 33, 0.08);
 }
 
 .premium-card-badge.pro {
     background: rgba(0, 100, 255, 0.08);
     color: #0064ff;
     border: 1px solid rgba(0, 100, 255, 0.12);
+    align-self: flex-start;
 }
 
 .premium-card-title {
-    font-size: 19px;
-    font-weight: 855;
+    font-size: 20px;
+    font-weight: 900;
     line-height: 1.45;
-    letter-spacing: -0.5px;
-    color: #ffffff;
+    letter-spacing: -0.6px;
+    color: var(--primary-color);
     margin-top: 4px;
+    text-align: center;
 }
 
 .premium-card-desc {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.72);
+    font-size: 13.5px;
+    color: var(--text-sub);
     line-height: 1.55;
-    font-weight: 400;
+    font-weight: 500;
     margin-bottom: 8px;
+    text-align: center;
 }
 
-/* Premium Call To Action Button */
+/* Premium Call To Action Button - Sophisticated High Contrast Forest Green */
 .btn-premium-cta {
-    background: linear-gradient(135deg, var(--accent-color) 0%, #00b067 100%) !important;
-    color: #0b3621 !important;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%) !important;
+    color: #ffffff !important;
     border: none !important;
     border-radius: 18px !important;
     font-size: 16px !important;
-    font-weight: 850 !important;
+    font-weight: 800 !important;
     padding: 16px !important;
-    box-shadow: 0 8px 24px rgba(0, 199, 117, 0.25) !important;
+    box-shadow: 0 8px 24px rgba(11, 54, 33, 0.18) !important;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     cursor: pointer;
+    width: 100%;
 }
 
 .btn-premium-cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 199, 117, 0.35) !important;
+    box-shadow: 0 12px 32px rgba(11, 54, 33, 0.28) !important;
 }
 
 .btn-premium-cta:active {
