@@ -14,7 +14,7 @@ if hasattr(sys.stdout, 'reconfigure'):
     except Exception:
         pass
 
-PORT = 8000
+PORT = int(os.environ.get('PORT', 8000))
 DB_NAME = "withpro.db"
 
 def init_db():
