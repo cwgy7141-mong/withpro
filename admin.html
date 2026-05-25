@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>withPRO - 관리자 대시보드</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0B3D2E; /* 딥 포레스트 그린 */
+            --primary-hover: #05241B;
+            --accent-color: #00C897; /* 싱그러운 그린 포인트 */
+            --bg-color: #F4F7F6;
+            --card-bg: #FFFFFF;
+            --text-color: #1E2D27;
+            --text-muted: #62776E;
+            --border-color: #E2EAE6;
+            --error-color: #E74C3C;
+            --success-color: #2ECC71;
+            --shadow: 0 8px 30px rgba(11, 61, 46, 0.05);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* 공통 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* -------------------------
+           [1] 로그인 패스코드 화면 
+        ------------------------- */
+        #login-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 40px 32px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(11, 61, 46, 0.08);
+            border: 1px solid rgba(11, 61, 46, 0.03);
+            text-align: center;
+        }
+
+        .logo-box {
+            margin-bottom: 24px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: var(--accent-color);
+        }
+
+        .login-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            width: 100%;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background-color: #FAFCFB;
+            font-size: 15px;
+            color: var(--text-color);
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-color);
+            background-color: var(--card-bg);
+            box-shadow: 0 0 0 4px rgba(11, 61, 46, 0.06);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .login-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(11, 61, 46, 0.2);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+            font-weight: 500;
+        }
+
+        /* -------------------------
+           [2] 관리자 대시보드 화면 
+        ------------------------- */
+        #admin-container {
+            width: 100%;
+            min-height: 100vh;
+            display: none; /* 초기 상태 숨김 */
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-out;
+            align-self: flex-start;
+        }
+
+        /* 헤더 스타일 */
+        .admin-header {
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-logo-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-logo {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .admin-logo span {
+            color: var(--accent-color);
+        }
+
+        .admin-badge {
+            background-color: rgba(0, 200, 151, 0.15);
+            color: var(--accent-color);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 30px;
+            border: 1px solid rgba(0, 200, 151, 0.2);
+        }
+
+        .header-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .share-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .share-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: #FFFFFF;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 8px 12px;
+        }
+
+        .logout-btn:hover {
+            color: #FFFFFF;
+            text-decoration: underline;
+        }
+
+        /* 본문 영역 */
+        .admin-content {
+            max-width: 1400px;
+            width: 100%;
+            margin: 40px auto;
+            padding: 0 40px;
+            flex-grow: 1;
+        }
+
+        /* 핵심 요약 카드 통계 영역 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 36px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(11, 61, 46, 0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(11, 61, 46, 0.08);
+            border-color: rgba(11, 61, 46, 0.15);
+            background-color: rgba(11, 61, 46, 0.01);
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-info .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .stat-info .stat-number span {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: var(--transition);
+        }
+
+        .stat-icon.green {
+            background-color: rgba(11, 61, 46, 0.06);
+            color: var(--primary-color);
+        }
+
+        .stat-icon.accent {
+            background-color: rgba(0, 200, 151, 0.08);
+            color: var(--accent-color);
+        }
+
+        .stat-icon.blue {
+            background-color: rgba(52, 152, 219, 0.08);
+            color: #3498db;
+        }
+
+        /* 대시보드 조작 패널 */
+        .dashboard-control {
+            background: var(--card-bg);
+            border-radius: 20px 20px 0 0;
+            padding: 24px 30px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        /* 탭 스타일 */
+        .tab-menu {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            background-color: rgba(11, 61, 46, 0.04);
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+        }
+
+        /* 컨트롤 버튼 그룹 */
+        .control-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 10px 16px;
+            padding-left: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border-color);
+            font-size: 14px;
+            outline: none;
+            width: 240px;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            width: 300px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .refresh-btn {
+            background-color: #FFFFFF;
+            border: 1.5px solid var(--border-color);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .refresh-btn:hover {
+            border-color: var(--primary-color);
+            background-color: #FAFCFB;
+        }
+
+        /* 테이블 뷰 포트 */
+        .table-viewport {
+            background: var(--card-bg);
+            border-radius: 0 0 20px 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            border: 1px solid rgba(11, 61, 46, 0.02);
+            border-top: none;
+            margin-bottom: 40px;
+        }
+
+        .table-section {
+            display: none;
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        .table-section.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 900px;
+        }
+
+        th {
+            background-color: #FAFCFB;
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 18px 24px;
+            border-bottom: 1.5px solid var(--border-color);
+        }
+
+        td {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14.5px;
+            color: var(--text-color);
+            transition: var(--transition);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: rgba(11, 61, 46, 0.02);
+        }
+
+        /* 빈 데이터 안내 */
+        .empty-state {
+            padding: 80px 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .empty-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        /* 배지 칩 */
+        .badge-chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .badge-chip.green {
+            background-color: rgba(11, 61, 46, 0.06);
+            color: var(--primary-color);
+        }
+
+        .badge-chip.accent {
+            background-color: rgba(0, 200, 151, 0.1);
+            color: #00A67E;
+        }
+
+        /* 토스트 메시지 */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 700;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 반응형 모바일 최적화 */
+        @media (max-width: 900px) {
+            .admin-header {
+                padding: 16px 20px;
+            }
+            .admin-content {
+                padding: 0 20px;
+                margin: 20px auto;
+            }
+            .dashboard-control {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 20px;
+            }
+            .search-input {
+                width: 100%;
+            }
+            .search-input:focus {
+                width: 100%;
+            }
+            .tab-menu {
+                overflow-x: auto;
+                padding-bottom: 4px;
+            }
+            .tab-btn {
+                white-space: nowrap;
+            }
+        }
+
+        /* 메인 화면 이동 버튼 스타일 */
+        .back-home-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background-color: transparent;
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .back-home-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background-color: rgba(11, 61, 46, 0.02);
+            transform: translateY(-2px);
+        }
+
+        .back-home-btn:active {
+            transform: translateY(0);
+        }
+
+        .back-home-btn svg {
+            transition: transform 0.2s ease;
+        }
+
+        .back-home-btn:hover svg {
+            transform: translateX(-3px);
+        }
+
+        .home-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .home-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+
+        .home-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- [1] 로그인 패스코드 화면 -->
+    <div id="login-container">
+        <div class="login-card">
+            <div class="logo-box">
+                <span class="logo-text">with<span>PRO</span></span>
+            </div>
+            <h2 class="login-title">관리자 인증</h2>
+            <p class="login-subtitle">신청 및 가입 내역을 안전하게 열람하기 위해<br>보안 비밀번호를 입력해 주세요.</p>
+            
+            <div class="form-group">
+                <label class="form-label" for="passcode-input">보안 암호 Key</label>
+                <input type="password" id="passcode-input" class="input-field" placeholder="비밀번호를 입력하세요" autofocus>
+            </div>
+            
+            <button class="login-btn" onclick="adminApp.login()">로그인 인증</button>
+            <button class="back-home-btn" onclick="location.href='index.html'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                </svg>
+                메인 화면으로 돌아가기
+            </button>
+            <div id="login-error" class="error-message">❌ 암호가 올바르지 않습니다. 다시 입력해 주세요.</div>
+        </div>
+    </div>
+
+    <!-- [2] 관리자 대시보드 화면 -->
+    <div id="admin-container">
+        <header class="admin-header">
+            <div class="header-logo-box">
+                <span class="admin-logo">with<span>PRO</span></span>
+                <span class="admin-badge">Admin Dashboard</span>
+            </div>
+            <div class="header-menu">
+                <button class="home-btn" onclick="location.href='index.html'">
+                    🏠 메인 화면
+                </button>
+                <button class="share-btn" onclick="adminApp.copyShareLink()">
+                    🔗 공유 링크 복사
+                </button>
+                <button class="logout-btn" onclick="adminApp.logout()">로그아웃</button>
+            </div>
+        </header>
+
+        <main class="admin-content">
+            <!-- 요약 통계 그리드 -->
+            <section class="stats-grid">
+                <div class="stat-card" onclick="adminApp.switchTab('requests-tab')">
+                    <div class="stat-info">
+                        <h3>⛳ 총 레슨 매칭 신청</h3>
+                        <div class="stat-number" id="count-requests">0<span>건</span></div>
+                    </div>
+                    <div class="stat-icon green">⛳</div>
+                </div>
+                <div class="stat-card" onclick="adminApp.switchTab('pros-tab')">
+                    <div class="stat-info">
+                        <h3>🏌️‍♂️ 승인 대기 프로 회원</h3>
+                        <div class="stat-number" id="count-pros">0<span>명</span></div>
+                    </div>
+                    <div class="stat-icon accent">🏌️‍♂️</div>
+                </div>
+                <div class="stat-card" onclick="adminApp.switchTab('users-tab')">
+                    <div class="stat-info">
+                        <h3>👤 가입 일반 회원</h3>
+                        <div class="stat-number" id="count-users">0<span>명</span></div>
+                    </div>
+                    <div class="stat-icon blue">👤</div>
+                </div>
+            </section>
+
+            <!-- 컨트롤 패널 -->
+            <section class="dashboard-control">
+                <div class="tab-menu">
+                    <button class="tab-btn active" onclick="adminApp.switchTab('requests-tab', this)">
+                        ⛳ 레슨 매칭 신청 내역
+                    </button>
+                    <button class="tab-btn" onclick="adminApp.switchTab('pros-tab', this)">
+                        🏌️‍♂️ 프로 회원 내역
+                    </button>
+                    <button class="tab-btn" onclick="adminApp.switchTab('users-tab', this)">
+                        👤 일반 회원 내역
+                    </button>
+                    <button class="tab-btn" onclick="adminApp.switchTab('firebase-tab', this)">
+                        🔥 Firebase 설정
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="search-input" class="search-input" placeholder="이름, 골프장, 연락처 검색..." oninput="adminApp.filterData()">
+                    </div>
+                    <button class="refresh-btn" onclick="adminApp.fetchData()">
+                        🔄 새로고침
+                    </button>
+                </div>
+            </section>
+
+            <!-- 테이블 리스트 영역 -->
+            <section class="table-viewport">
+                <!-- 1) 레슨 매칭 내역 테이블 -->
+                <div id="requests-tab" class="table-section active">
+                    <table id="requests-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">번호</th>
+                                <th style="width: 180px;">신청자 정보</th>
+                                <th>라운딩 골프장</th>
+                                <th style="width: 130px;">라운딩 날짜</th>
+                                <th style="width: 110px;">티오프 시간</th>
+                                <th style="width: 120px;">매칭 상태</th>
+                                <th style="width: 150px;">관리자 작업</th>
+                                <th style="width: 140px;">신청 시각</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-body">
+                            <!-- JS 렌더링 영역 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2) 프로 회원 내역 테이블 -->
+                <div id="pros-tab" class="table-section">
+                    <table id="pros-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">번호</th>
+                                <th style="width: 100px;">이름</th>
+                                <th style="width: 130px;">연락처</th>
+                                <th style="width: 150px;">자격증/회원번호</th>
+                                <th>활동 가능 요일</th>
+                                <th>주요 활동 지역</th>
+                                <th style="width: 100px;">승인 상태</th>
+                                <th style="width: 130px;">관리자 작업</th>
+                                <th style="width: 130px;">등록 신청 시각</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-body">
+                            <!-- JS 렌더링 영역 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3) 일반 회원 내역 테이블 -->
+                <div id="users-tab" class="table-section">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">번호</th>
+                                <th style="width: 150px;">이름</th>
+                                <th style="width: 180px;">연락처</th>
+                                <th style="width: 100px;">성별</th>
+                                <th>활동 희망 지역</th>
+                                <th style="width: 180px;">가입 일시</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-body">
+                            <!-- JS 렌더링 영역 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4) Firebase 연동 설정 -->
+                <div id="firebase-tab" class="table-section" style="padding: 30px; background-color: var(--card-bg);">
+                    <div style="max-width: 900px; margin: 0 auto;">
+                        <h2 style="font-size: 20px; font-weight: 800; color: var(--primary-color); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                            🔥 Firebase 실시간 앱 푸시 연동 관리자
+                        </h2>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+                            withPRO 골퍼 매칭 시스템의 실시간 알림을 위한 Firebase Cloud Messaging(FCM) 설정을 웹 콘솔에서 안전하고 간편하게 관리합니다.
+                        </p>
+
+                        <!-- 실시간 진단 현황판 -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px;">
+                            <div id="status-client-card" style="background-color: #FAFCFB; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: var(--transition);">
+                                <div style="font-size: 32px;">🌐</div>
+                                <div>
+                                    <h4 style="font-size: 13.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">클라이언트 웹 구성 상태</h4>
+                                    <div id="status-client-text" style="font-size: 16px; font-weight: 800; color: var(--error-color);">🔴 미설정 (동작 대기)</div>
+                                </div>
+                            </div>
+                            <div id="status-admin-card" style="background-color: #FAFCFB; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: var(--transition);">
+                                <div style="font-size: 32px;">🛡️</div>
+                                <div>
+                                    <h4 style="font-size: 13.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">서버 Admin SDK 초기화 상태</h4>
+                                    <div id="status-admin-text" style="font-size: 16px; font-weight: 800; color: var(--error-color);">🔴 비활성화 (가상 시뮬레이션)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px;">
+                            <!-- 1. 클라이언트 설정 폼 -->
+                            <div style="background-color: #FAFCFB; border: 1px solid var(--border-color); border-radius: 20px; padding: 24px; box-shadow: var(--shadow);">
+                                <h3 style="font-size: 16px; font-weight: 800; color: var(--primary-color); margin-bottom: 16px; border-bottom: 1.5px solid var(--border-color); padding-bottom: 8px;">
+                                    🌐 (1) 클라이언트 Web Push 설정 (Web App Config)
+                                </h3>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label" style="font-size: 12px; font-weight: 700;">API Key</label>
+                                        <input type="text" id="fb-apiKey" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" placeholder="AIzaSy...">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label" style="font-size: 12px; font-weight: 700;">Auth Domain</label>
+                                        <input type="text" id="fb-authDomain" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" placeholder="project-id.firebaseapp.com">
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label" style="font-size: 12px; font-weight: 700;">Project ID</label>
+                                        <input type="text" id="fb-projectId" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" placeholder="project-id">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label" style="font-size: 12px; font-weight: 700;">Storage Bucket</label>
+                                        <input type="text" id="fb-storageBucket" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" placeholder="project-id.appspot.com">
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label" style="font-size: 12px; font-weight: 700;">Messaging Sender ID</label>
+                                        <input type="text" id="fb-messagingSenderId" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" placeholder="1234567890">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label" style="font-size: 12px; font-weight: 700;">App ID</label>
+                                        <input type="text" id="fb-appId" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" placeholder="1:1234:web:abcd">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 20px;">
+                                    <label class="form-label" style="font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                                        <span>Web Push 공개키 (VAPID Public Key)</span>
+                                        <span style="color: var(--accent-color); font-size: 11px;">*필수</span>
+                                    </label>
+                                    <input type="text" id="fb-vapidKey" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" placeholder="Firebase 프로젝트 설정 -> 클라우드 메시징 -> 웹 푸시 인증서 키">
+                                </div>
+                                <button class="login-btn" style="padding: 12px; font-size: 14.5px;" onclick="adminApp.saveFirebaseConfig()">클라이언트 설정 저장</button>
+                            </div>
+
+                            <!-- 2. 서버 Admin SDK 비공개 키 설정 폼 -->
+                            <div style="background-color: #FAFCFB; border: 1px solid var(--border-color); border-radius: 20px; padding: 24px; box-shadow: var(--shadow);">
+                                <h3 style="font-size: 16px; font-weight: 800; color: var(--primary-color); margin-bottom: 16px; border-bottom: 1.5px solid var(--border-color); padding-bottom: 8px;">
+                                    🔑 (2) 서버 Admin SDK 비공개 키 설정 (Service Account JSON)
+                                </h3>
+                                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+                                    Firebase 콘솔(설정 -> 서비스 계정 -> 새 비공개 키 생성)에서 다운로드한 <strong>JSON 키 파일의 전체 내용</strong>을 아래에 붙여넣어 주세요.
+                                </p>
+                                <div class="form-group" style="margin-bottom: 20px;">
+                                    <label class="form-label" style="font-size: 12px; font-weight: 700;">비공개 키 서비스 계정 JSON 데이터</label>
+                                    <textarea id="fb-serviceAccount" class="input-field" style="font-family: 'Courier New', monospace; height: 160px; font-size: 12.5px; line-height: 1.4; resize: vertical; padding: 14px;" placeholder='{&#10;  "type": "service_account",&#10;  "project_id": "...",&#10;  "private_key_id": "...",&#10;  "private_key": "...",&#10;  "client_email": "..."&#10;}'></textarea>
+                                </div>
+                                <button class="login-btn" style="padding: 12px; font-size: 14.5px; background-color: var(--accent-color);" onmouseover="this.style.backgroundColor='#00b386'" onmouseout="this.style.backgroundColor='var(--accent-color)'" onclick="adminApp.saveFirebaseServiceAccount()">서버 비공개 키 저장 및 연동 활성화</button>
+                            </div>
+                        </div>
+
+                        <!-- 3. 실시간 푸시 발송 테스트 도구 -->
+                        <div style="background-color: #FAFCFB; border: 1px solid var(--border-color); border-radius: 20px; padding: 24px; box-shadow: var(--shadow);">
+                            <h3 style="font-size: 16px; font-weight: 800; color: var(--primary-color); margin-bottom: 12px; border-bottom: 1.5px solid var(--border-color); padding-bottom: 8px;">
+                                🚀 (3) 실시간 FCM 앱 푸시 즉석 테스트기
+                            </h3>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                                연동이 잘 되었는지 확인해 보세요! 골퍼/프로 스마트폰 기기 혹은 아래 입력창에 FCM 수신 등록 토큰을 입력하고 즉석 테스트 푸시를 보낼 수 있습니다.
+                            </p>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="font-size: 12px; font-weight: 700;">FCM 수신 기기 등록 토큰 (FCM Registration Token)</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="test-push-token" class="input-field" style="padding: 10px 14px; font-size: 13.5px; flex: 1;" placeholder="기기에서 발급받은 고유 FCM 토큰 값을 입력하거나 아래 붙여넣기 버튼 활용">
+                                    <button class="refresh-btn" style="padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; white-space: nowrap;" onclick="adminApp.pasteMyCachedToken()">내 토큰 불러오기</button>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label" style="font-size: 12px; font-weight: 700;">알림 제목</label>
+                                    <input type="text" id="test-push-title" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" value="⛳ [withPRO] 실시간 연동 테스트 성공!">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label" style="font-size: 12px; font-weight: 700;">알림 내용</label>
+                                    <input type="text" id="test-push-body" class="input-field" style="padding: 10px 14px; font-size: 13.5px;" value="Firebase FCM 서비스 연동이 완벽하게 완료되었습니다! 축하드립니다.">
+                                </div>
+                            </div>
+                            <button class="login-btn" style="padding: 12px; font-size: 14.5px; background-color: #0064FF;" onmouseover="this.style.backgroundColor='#0052d4'" onmouseout="this.style.backgroundColor='#0064FF'" onclick="adminApp.sendTestPush()">테스트 FCM 알림 즉석 발송 쏘기 🎯</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 토스트 알림 메시지 구조 -->
+    <div id="toast">✅ 공유 링크가 클립보드에 복사되었습니다!</div>
+
+    <script>
+// window.alert 및 window.confirm 커스텀 오버라이드 시스템 (withPRO 테마)
+(function() {
+    // 1. Inject Styles (Self-contained)
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .withpro-alert-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 54, 33, 0.4); /* Deep forest green translucent */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 20000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .withpro-alert-backdrop.active {
+            opacity: 1;
+        }
+        .withpro-alert-container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 340px;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(11, 54, 33, 0.15);
+            border: 1px solid rgba(11, 54, 33, 0.08);
+            transform: scale(0.9);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            box-sizing: border-box;
+        }
+        .withpro-alert-backdrop.active .withpro-alert-container {
+            transform: scale(1);
+        }
+        .withpro-alert-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .withpro-alert-icon {
+            width: 24px;
+            height: 24px;
+            color: #00c775; /* Mint green */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .withpro-alert-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0b3621; /* Forest green */
+            margin: 0;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            letter-spacing: -0.3px;
+        }
+        .withpro-alert-body {
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.5;
+            color: #333d37;
+            margin-bottom: 24px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+        }
+        .withpro-alert-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .withpro-alert-button {
+            flex: 1;
+            background: #0b3621;
+            color: #ffffff;
+            border: none;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            box-shadow: 0 4px 12px rgba(11, 54, 33, 0.15);
+            outline: none;
+        }
+        .withpro-alert-button:hover {
+            background: #124d32;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(11, 54, 33, 0.2);
+        }
+        .withpro-alert-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 6px rgba(11, 54, 33, 0.1);
+        }
+        .withpro-alert-button.cancel {
+            background: #f3f5f4;
+            color: #5c645f;
+            box-shadow: none;
+        }
+        .withpro-alert-button.cancel:hover {
+            background: #e6eae8;
+            transform: translateY(-1px);
+        }
+        .withpro-alert-button.cancel:active {
+            transform: translateY(1px);
+        }
+    `;
+    document.head.appendChild(style);
+
+    // window.alert 오버라이드
+    window.alert = function(message) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'withpro-alert-backdrop';
+
+        const container = document.createElement('div');
+        container.className = 'withpro-alert-container';
+
+        const header = document.createElement('div');
+        header.className = 'withpro-alert-header';
+
+        const icon = document.createElement('div');
+        icon.className = 'withpro-alert-icon';
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+
+        const title = document.createElement('div');
+        title.className = 'withpro-alert-title';
+        title.innerText = 'withPRO의 메시지';
+
+        header.appendChild(icon);
+        header.appendChild(title);
+
+        const body = document.createElement('div');
+        body.className = 'withpro-alert-body';
+        body.innerText = message;
+
+        const actions = document.createElement('div');
+        actions.className = 'withpro-alert-actions';
+
+        const button = document.createElement('button');
+        button.className = 'withpro-alert-button';
+        button.innerText = '확인';
+
+        actions.appendChild(button);
+        container.appendChild(header);
+        container.appendChild(body);
+        container.appendChild(actions);
+        backdrop.appendChild(container);
+
+        // App container check (for centering in mobile layout frame)
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) {
+            backdrop.style.position = 'absolute';
+            backdrop.style.borderRadius = 'var(--radius-lg)';
+            appContainer.appendChild(backdrop);
+        } else {
+            document.body.appendChild(backdrop);
+        }
+
+        setTimeout(() => {
+            backdrop.classList.add('active');
+        }, 10);
+
+        button.focus();
+
+        const closeAlert = () => {
+            backdrop.classList.remove('active');
+            setTimeout(() => {
+                backdrop.remove();
+            }, 250);
+        };
+
+        button.onclick = closeAlert;
+        backdrop.onclick = (e) => {
+            if (e.target === backdrop) {
+                closeAlert();
+            }
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' || e.key === 'Enter') {
+                closeAlert();
+                document.removeEventListener('keydown', handleKeyDown);
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+    };
+
+    // 비동기 confirm 구현 함수
+    window.withproConfirm = function(message) {
+        return new Promise((resolve) => {
+            const backdrop = document.createElement('div');
+            backdrop.className = 'withpro-alert-backdrop';
+
+            const container = document.createElement('div');
+            container.className = 'withpro-alert-container';
+
+            const header = document.createElement('div');
+            header.className = 'withpro-alert-header';
+
+            const icon = document.createElement('div');
+            icon.className = 'withpro-alert-icon';
+            icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+
+            const title = document.createElement('div');
+            title.className = 'withpro-alert-title';
+            title.innerText = 'withPRO의 메시지';
+
+            header.appendChild(icon);
+            header.appendChild(title);
+
+            const body = document.createElement('div');
+            body.className = 'withpro-alert-body';
+            body.innerText = message;
+
+            const actions = document.createElement('div');
+            actions.className = 'withpro-alert-actions';
+
+            const cancelButton = document.createElement('button');
+            cancelButton.className = 'withpro-alert-button cancel';
+            cancelButton.innerText = '취소';
+
+            const okButton = document.createElement('button');
+            okButton.className = 'withpro-alert-button';
+            okButton.innerText = '확인';
+
+            actions.appendChild(cancelButton);
+            actions.appendChild(okButton);
+            container.appendChild(header);
+            container.appendChild(body);
+            container.appendChild(actions);
+            backdrop.appendChild(container);
+
+            const appContainer = document.querySelector('.app-container');
+            if (appContainer) {
+                backdrop.style.position = 'absolute';
+                backdrop.style.borderRadius = 'var(--radius-lg)';
+                appContainer.appendChild(backdrop);
+            } else {
+                document.body.appendChild(backdrop);
+            }
+
+            setTimeout(() => {
+                backdrop.classList.add('active');
+            }, 10);
+
+            okButton.focus();
+
+            const closeWithResult = (result) => {
+                backdrop.classList.remove('active');
+                setTimeout(() => {
+                    backdrop.remove();
+                }, 250);
+                resolve(result);
+            };
+
+            okButton.onclick = () => closeWithResult(true);
+            cancelButton.onclick = () => closeWithResult(false);
+            
+            backdrop.onclick = (e) => {
+                if (e.target === backdrop) {
+                    closeWithResult(false);
+                }
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Escape') {
+                    closeWithResult(false);
+                    document.removeEventListener('keydown', handleKeyDown);
+                } else if (e.key === 'Enter') {
+                    closeWithResult(true);
+                    document.removeEventListener('keydown', handleKeyDown);
+                }
+            };
+            document.addEventListener('keydown', handleKeyDown);
+        });
+    };
+})();
+
+
+        const adminApp = {
+            currentKey: '',
+            cachedData: null,
+            activeTabId: 'requests-tab',
+
+            init: function() {
+                // 엔터 입력 시 로그인 처리 연동
+                document.getElementById('passcode-input').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') adminApp.login();
+                });
+
+                // 1. URL 쿼리 파라미터에서 key 추출
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlKey = urlParams.get('key');
+
+                if (urlKey) {
+                    this.currentKey = urlKey;
+                    localStorage.setItem('withpro_admin_key', urlKey);
+                    // 브라우저 주소창 깔끔하게 유지하기 위해 쿼리 파라미터 제외하고 히스토리 변경
+                    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+                } else {
+                    // 2. localStorage에서 key 로드
+                    this.currentKey = localStorage.getItem('withpro_admin_key') || '';
+                }
+
+                if (this.currentKey) {
+                    this.fetchData();
+                } else {
+                    this.showLogin();
+                }
+            },
+
+            showLogin: function() {
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('admin-container').style.display = 'none';
+                document.getElementById('passcode-input').focus();
+            },
+
+            showDashboard: function() {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('admin-container').style.display = 'flex';
+            },
+
+            login: function() {
+                const input = document.getElementById('passcode-input').value.trim();
+                if (!input) {
+                    this.showError('보안 암호를 입력해 주세요.');
+                    return;
+                }
+                this.currentKey = input;
+                this.fetchData();
+            },
+
+            logout: function() {
+                localStorage.removeItem('withpro_admin_key');
+                this.currentKey = '';
+                this.cachedData = null;
+                document.getElementById('passcode-input').value = '';
+                this.showLogin();
+            },
+
+            showError: function(msg) {
+                const errDiv = document.getElementById('login-error');
+                errDiv.innerText = `❌ ${msg}`;
+                errDiv.style.display = 'block';
+                document.getElementById('passcode-input').focus();
+            },
+
+            fetchData: async function() {
+                try {
+                    const response = await fetch(`/api/admin/data?key=${encodeURIComponent(this.currentKey)}`);
+                    
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('withpro_admin_key');
+                        this.showLogin();
+                        this.showError('인증 암호가 올바르지 않습니다.');
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('서버 데이터를 가져오는 중에 오류가 발생했습니다.');
+                    }
+
+                    const data = await response.json();
+                    this.cachedData = data;
+                    
+                    document.getElementById('login-error').style.display = 'none';
+                    this.showDashboard();
+                    this.renderDashboard();
+                    
+                    // Firebase 탭이 활성화 상태일 경우 설정 값 동시 동기화
+                    if (this.activeTabId === 'firebase-tab') {
+                        this.fetchFirebaseSettings();
+                    }
+                    
+                } catch (e) {
+                    this.showLogin();
+                    this.showError(e.message || '네트워크 연결 오류가 발생했습니다.');
+                }
+            },
+
+            fetchFirebaseSettings: async function() {
+                try {
+                    const cfgRes = await fetch('/api/firebase-config');
+                    if (cfgRes.ok) {
+                        const cfg = await cfgRes.json();
+                        document.getElementById('fb-apiKey').value = cfg.apiKey || '';
+                        document.getElementById('fb-authDomain').value = cfg.authDomain || '';
+                        document.getElementById('fb-projectId').value = cfg.projectId || '';
+                        document.getElementById('fb-storageBucket').value = cfg.storageBucket || '';
+                        document.getElementById('fb-messagingSenderId').value = cfg.messagingSenderId || '';
+                        document.getElementById('fb-appId').value = cfg.appId || '';
+                        document.getElementById('fb-vapidKey').value = cfg.vapidKey || '';
+                    }
+
+                    const statusRes = await fetch(`/api/admin/firebase-status?key=${encodeURIComponent(this.currentKey)}`);
+                    if (statusRes.ok) {
+                        const status = await statusRes.json();
+                        
+                        const clientText = document.getElementById('status-client-text');
+                        const clientCard = document.getElementById('status-client-card');
+                        if (status.client_configured) {
+                            clientText.innerText = "🟢 연결 완료 (동작 중)";
+                            clientText.style.color = "var(--primary-color)";
+                            clientCard.style.borderColor = "var(--primary-color)";
+                            clientCard.style.backgroundColor = "#f0fbf5";
+                        } else {
+                            clientText.innerText = "🔴 미설정 (동작 대기)";
+                            clientText.style.color = "var(--error-color)";
+                            clientCard.style.borderColor = "var(--border-color)";
+                            clientCard.style.backgroundColor = "#FAFCFB";
+                        }
+
+                        const adminText = document.getElementById('status-admin-text');
+                        const adminCard = document.getElementById('status-admin-card');
+                        if (status.admin_initialized) {
+                            adminText.innerText = "🟢 활성화 (FCM 앱 푸시 가동)";
+                            adminText.style.color = "var(--primary-color)";
+                            adminCard.style.borderColor = "var(--primary-color)";
+                            adminCard.style.backgroundColor = "#f0fbf5";
+                            
+                            if (!document.getElementById('fb-serviceAccount').value) {
+                                document.getElementById('fb-serviceAccount').placeholder = "🔒 서비스 계정 비공개 키가 안전하게 등록 및 활성화되어 있습니다.";
+                            }
+                        } else {
+                            adminText.innerText = "🔴 비활성화 (가상 시뮬레이션)";
+                            adminText.style.color = "var(--error-color)";
+                            adminCard.style.borderColor = "var(--border-color)";
+                            adminCard.style.backgroundColor = "#FAFCFB";
+                        }
+                    }
+                } catch(e) {
+                    console.error("Firebase 설정 조회 실패:", e);
+                }
+            },
+
+            saveFirebaseConfig: async function() {
+                const config = {
+                    apiKey: document.getElementById('fb-apiKey').value.trim(),
+                    authDomain: document.getElementById('fb-authDomain').value.trim(),
+                    projectId: document.getElementById('fb-projectId').value.trim(),
+                    storageBucket: document.getElementById('fb-storageBucket').value.trim(),
+                    messagingSenderId: document.getElementById('fb-messagingSenderId').value.trim(),
+                    appId: document.getElementById('fb-appId').value.trim(),
+                    vapidKey: document.getElementById('fb-vapidKey').value.trim()
+                };
+
+                if (!config.apiKey || !config.vapidKey) {
+                    alert("API Key와 Web Push 공개키(VAPID Key)는 필수 항목입니다.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/save-firebase-config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: this.currentKey, config: config })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(data.message);
+                        this.fetchFirebaseSettings();
+                    } else {
+                        alert(data.error || '저장에 실패했습니다.');
+                    }
+                } catch(e) {
+                    alert('서버 저장 중 네트워크 오류가 발생했습니다.');
+                }
+            },
+
+            saveFirebaseServiceAccount: async function() {
+                const serviceAccount = document.getElementById('fb-serviceAccount').value.trim();
+                if (!serviceAccount) {
+                    alert("서비스 계정 JSON 데이터를 입력하세요.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/save-firebase-service-account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: this.currentKey, service_account: serviceAccount })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(data.message);
+                        document.getElementById('fb-serviceAccount').value = ''; 
+                        this.fetchFirebaseSettings();
+                    } else {
+                        alert(data.error || '연동 활성화에 실패했습니다.');
+                    }
+                } catch(e) {
+                    alert('서버 전송 중 네트워크 오류가 발생했습니다.');
+                }
+            },
+
+            pasteMyCachedToken: function() {
+                const cached = localStorage.getItem('withpro_my_fcm_token');
+                if (cached) {
+                    document.getElementById('test-push-token').value = cached;
+                    const toast = document.getElementById('toast');
+                    toast.innerText = "📋 내 브라우저 FCM 토큰이 자동으로 입력되었습니다!";
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
+                } else {
+                    alert("최근 발급받은 내 토큰이 존재하지 않습니다. 먼저 일반 회원/프로 화면에 접속해 알림 허용을 해주세요.");
+                }
+            },
+
+            sendTestPush: async function() {
+                const token = document.getElementById('test-push-token').value.trim();
+                const title = document.getElementById('test-push-title').value.trim();
+                const body = document.getElementById('test-push-body').value.trim();
+
+                if (!token) {
+                    alert("수신 기기 등록 토큰을 입력해 주세요.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/admin/firebase-test-push', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: this.currentKey, token, title, body })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert("🎯 테스트 푸시 전송 요청이 성공적으로 발송되었습니다!");
+                    } else {
+                        alert("❌ 발송 실패: " + (data.error || "알 수 없는 오류"));
+                    }
+                } catch(e) {
+                    alert('서버 통신 중 네트워크 오류가 발생했습니다.');
+                }
+            },
+
+            renderDashboard: function() {
+                if (!this.cachedData) return;
+
+                // 1. 통계 데이터 업데이트
+                const pendingPros = this.cachedData.pro_users.filter(pro => (pro.status || '승인대기') === '승인대기').length;
+                document.getElementById('count-requests').innerHTML = `${this.cachedData.lesson_requests.length}<span>건</span>`;
+                document.getElementById('count-pros').innerHTML = `${pendingPros}<span>명</span>`;
+                document.getElementById('count-users').innerHTML = `${this.cachedData.regular_users.length}<span>명</span>`;
+
+                // 2. 각 테이블 렌더링
+                this.renderRequestsTable(this.cachedData.lesson_requests);
+                this.renderProsTable(this.cachedData.pro_users);
+                this.renderUsersTable(this.cachedData.regular_users);
+
+                // 3. 필터 리셋
+                document.getElementById('search-input').value = '';
+            },
+
+            renderRequestsTable: function(dataList) {
+                const tbody = document.querySelector('#requests-tab .table-body');
+                if (dataList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">⛳</span>등록된 레슨 매칭 신청 내역이 없습니다.</div></td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = dataList.map((item, idx) => {
+                    const status = item.status || '매칭 대기중';
+                    let statusBadge = '';
+                    let actionHtml = '';
+
+                    if (status === '매칭 대기중') {
+                        statusBadge = `<span class="badge-chip" style="background-color: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; font-size: 11px;">매칭 대기중</span>`;
+                        actionHtml = `<button class="action-btn-sm" style="background-color: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; transition: var(--transition);" onclick="adminApp.openMatchModal(${item.id})">매칭 완료 처리</button>`;
+                    } else if (status === '프로 수락 대기중') {
+                        statusBadge = `<span class="badge-chip" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 11px;">프로 수락 대기중</span>`;
+                        actionHtml = `
+                            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+                                <span style="color: #b45309; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">⏳ 수락 확인중</span>
+                                <button class="action-btn-sm" style="background-color: #0064FF; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0, 100, 255, 0.15); transition: var(--transition);" onmouseover="this.style.backgroundColor='#0052d4'" onmouseout="this.style.backgroundColor='#0064FF'" onclick="adminApp.copyProAcceptLink(${item.id}, ${item.matched_pro_id})">
+                                    🔗 수락 링크 복사
+                                </button>
+                            </div>
+                        `;
+                    } else if (status === '매칭완료') {
+                        statusBadge = `<span class="badge-chip" style="background-color: #ebf5ff; color: #1e40af; border: 1px solid #bfdbfe; font-size: 11px;">매칭 완료</span>`;
+                        actionHtml = `<span style="color: var(--text-muted); font-size: 12px; font-weight: 500;">결제 대기 중...</span>`;
+                    } else if (status === '결제완료') {
+                        statusBadge = `<span class="badge-chip" style="background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 800;">결제 완료</span>`;
+                        actionHtml = `<span style="color: #059669; font-size: 12.5px; font-weight: 700;">최종 예약 확정</span>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td><strong>${dataList.length - idx}</strong></td>
+                            <td>
+                                <strong style="font-size: 14px; color: var(--text-color);">${this.escapeHtml(item.user_name || '이름 없음')}</strong>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500;">📞 ${this.escapeHtml(item.user_contact || '-')}</div>
+                                <div style="font-size: 11px; color: #9ca3af; margin-top: 3px; font-weight: 500;">(ID: ${this.escapeHtml(item.user_id)})</div>
+                            </td>
+                            <td><strong>${this.escapeHtml(item.golf_course)}</strong></td>
+                            <td>📅 ${this.escapeHtml(item.lesson_date)}</td>
+                            <td>⏰ ${this.escapeHtml(item.lesson_time)}</td>
+                            <td>${statusBadge}</td>
+                            <td>${actionHtml}</td>
+                            <td style="color: var(--text-muted); font-size: 13px;">${this.formatDate(item.created_at)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+
+            renderProsTable: function(dataList) {
+                const tbody = document.querySelector('#pros-tab .table-body');
+                if (dataList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">🏌️‍♂️</span>신청된 프로 회원 내역이 없습니다.</div></td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = dataList.map((item, idx) => {
+                    const status = item.status || '승인대기';
+                    let statusBadge = '';
+                    let actionHtml = '';
+
+                    if (status === '승인대기') {
+                        statusBadge = `<span class="badge-chip" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 11px;">승인 대기</span>`;
+                        actionHtml = `<button class="action-btn-sm" style="background-color: var(--accent-color); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; transition: var(--transition);" onclick="adminApp.approvePro(${item.id})">승인 완료</button>`;
+                    } else if (status === '승인완료') {
+                        statusBadge = `<span class="badge-chip" style="background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 800;">승인 완료</span>`;
+                        actionHtml = `<span style="color: #059669; font-size: 11.5px; font-weight: 700;">정식 파트너</span>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td><strong>${dataList.length - idx}</strong></td>
+                            <td><strong>${this.escapeHtml(item.name || '토스 프로')}</strong></td>
+                            <td>📞 ${this.escapeHtml(item.contact || '010-TOSS-PRO')}</td>
+                            <td>
+                                <span class="badge-chip accent" style="margin-bottom: 4px; display: inline-block;">${this.escapeHtml(item.cert_type || '정회원')}</span>
+                                <div style="font-size: 12.5px; font-weight: 700; color: var(--text-muted);">${this.escapeHtml(item.cert_number)}</div>
+                            </td>
+                            <td style="font-weight: 500;">${this.escapeHtml(item.available_days || '-')}</td>
+                            <td>📍 ${this.escapeHtml(item.regions || '-')}</td>
+                            <td>${statusBadge}</td>
+                            <td>${actionHtml}</td>
+                            <td style="color: var(--text-muted); font-size: 13px;">${this.formatDate(item.created_at)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+
+            renderUsersTable: function(dataList) {
+                const tbody = document.querySelector('#users-tab .table-body');
+                if (dataList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">👤</span>가입된 일반 회원 내역이 없습니다.</div></td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = dataList.map((item, idx) => `
+                    <tr>
+                        <td><strong>${dataList.length - idx}</strong></td>
+                        <td><strong>${this.escapeHtml(item.name)}</strong></td>
+                        <td>📞 ${this.escapeHtml(item.contact)}</td>
+                        <td>${this.escapeHtml(item.gender || '-')}</td>
+                        <td>📍 ${this.escapeHtml(item.region || '-')}</td>
+                        <td style="color: var(--text-muted); font-size: 13px;">${this.formatDate(item.created_at)}</td>
+                    </tr>
+                `).join('');
+            },
+
+            switchTab: function(tabId, btn) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                
+                let targetBtn = btn;
+                if (!targetBtn) {
+                    if (tabId === 'requests-tab') {
+                        targetBtn = document.querySelector('.tab-menu .tab-btn:nth-child(1)');
+                    } else if (tabId === 'pros-tab') {
+                        targetBtn = document.querySelector('.tab-menu .tab-btn:nth-child(2)');
+                    } else if (tabId === 'users-tab') {
+                        targetBtn = document.querySelector('.tab-menu .tab-btn:nth-child(3)');
+                    } else if (tabId === 'firebase-tab') {
+                        targetBtn = document.querySelector('.tab-menu .tab-btn:nth-child(4)');
+                    }
+                }
+                if (targetBtn) targetBtn.classList.add('active');
+
+                document.querySelectorAll('.table-section').forEach(sec => sec.classList.remove('active'));
+                const targetSec = document.getElementById(tabId);
+                if (targetSec) targetSec.classList.add('active');
+
+                this.activeTabId = tabId;
+                if (tabId === 'firebase-tab') {
+                    this.fetchFirebaseSettings();
+                } else {
+                    this.filterData(); 
+                }
+            },
+
+            filterData: function() {
+                if (!this.cachedData) return;
+                const keyword = document.getElementById('search-input').value.toLowerCase().trim();
+
+                if (this.activeTabId === 'requests-tab') {
+                    const filtered = this.cachedData.lesson_requests.filter(item => 
+                        (item.user_id && item.user_id.toLowerCase().includes(keyword)) ||
+                        (item.user_name && item.user_name.toLowerCase().includes(keyword)) ||
+                        (item.user_contact && item.user_contact.includes(keyword)) ||
+                        (item.golf_course && item.golf_course.toLowerCase().includes(keyword)) ||
+                        (item.lesson_date && item.lesson_date.includes(keyword))
+                    );
+                    this.renderRequestsTable(filtered);
+                } else if (this.activeTabId === 'pros-tab') {
+                    const filtered = this.cachedData.pro_users.filter(item => 
+                        (item.name && item.name.toLowerCase().includes(keyword)) ||
+                        (item.contact && item.contact.includes(keyword)) ||
+                        (item.cert_number && item.cert_number.toLowerCase().includes(keyword)) ||
+                        (item.regions && item.regions.toLowerCase().includes(keyword))
+                    );
+                    this.renderProsTable(filtered);
+                } else if (this.activeTabId === 'users-tab') {
+                    const filtered = this.cachedData.regular_users.filter(item => 
+                        (item.name && item.name.toLowerCase().includes(keyword)) ||
+                        (item.contact && item.contact.includes(keyword)) ||
+                        (item.region && item.region.toLowerCase().includes(keyword))
+                    );
+                    this.renderUsersTable(filtered);
+                }
+            },
+
+            copyShareLink: function() {
+                const shareUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?key=${encodeURIComponent(this.currentKey)}`;
+                
+                // 클립보드에 복사 수행
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    const toast = document.getElementById('toast');
+                    toast.innerText = "✅ 공유 링크가 클립보드에 복사되었습니다!";
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2500);
+                }).catch(err => {
+                    alert('링크 복사에 실패했습니다. 직접 주소창을 복사해 주세요.');
+                });
+            },
+
+            copyProAcceptLink: function(reqId, proId) {
+                const acceptUrl = `${window.location.protocol}//${window.location.host}/index.html?view=pro-accept&id=${reqId}&pro_id=${proId}`;
+                
+                // 클립보드에 복사 수행
+                navigator.clipboard.writeText(acceptUrl).then(() => {
+                    const toast = document.getElementById('toast');
+                    toast.innerText = "📋 프로 수락 테스트 링크가 클립보드에 복사되었습니다!";
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2500);
+                }).catch(err => {
+                    alert('링크 복사에 실패했습니다. 직접 주소를 조립해 주세요.');
+                });
+            },
+
+            currentMatchReqId: null,
+
+            openMatchModal: function(reqId) {
+                this.currentMatchReqId = reqId;
+                if (!this.cachedData) return;
+                
+                const req = this.cachedData.lesson_requests.find(item => item.id === reqId);
+                if (!req) return;
+                
+                document.getElementById('modal-golf-course').innerText = req.golf_course;
+                
+                const approvedPros = this.cachedData.pro_users.filter(pro => pro.status === '승인완료');
+                const selectElement = document.getElementById('match-pro-select');
+                const conditionDiv = document.getElementById('modal-match-condition');
+                
+                if (approvedPros.length === 0) {
+                    conditionDiv.innerHTML = `⚠️ 승인 완료된 파트너 프로가 아직 등록되지 않았습니다.`;
+                    selectElement.innerHTML = `<option value="">(승인 완료된 프로가 없습니다. 먼저 프로 승인을 해주세요)</option>`;
+                    document.getElementById('match-modal').style.display = 'flex';
+                    return;
+                }
+                
+                // 요일 계산
+                const daysK = ['일', '월', '화', '수', '목', '금', '토'];
+                let dayOfWeek = '-';
+                try {
+                    const dateObj = new Date(req.lesson_date);
+                    if (!isNaN(dateObj.getTime())) {
+                        dayOfWeek = daysK[dateObj.getDay()];
+                    }
+                } catch(e) {
+                    console.error('날짜 변환 실패', e);
+                }
+                
+                // 지역 감지
+                function detectRegion(golfCourseName) {
+                    const name = golfCourseName || '';
+                    if (name.includes('서울')) return '서울';
+                    if (name.includes('인천') || name.includes('청라') || name.includes('송도') || name.includes('클럽72')) return '인천';
+                    if (name.includes('부산') || name.includes('스톤게이트') || name.includes('해운대') || name.includes('아시아드')) return '부산';
+                    if (name.includes('대구')) return '대구';
+                    if (name.includes('광주') || name.includes('어등산')) return '광주';
+                    if (name.includes('대전')) return '대전';
+                    if (name.includes('울산') || name.includes('보라')) return '울산';
+                    if (name.includes('세종')) return '세종';
+                    if (name.includes('강원') || name.includes('춘천') || name.includes('원주') || name.includes('설악') || name.includes('평창')) return '강원';
+                    if (name.includes('충북') || name.includes('청주') || name.includes('충주')) return '충북';
+                    if (name.includes('충남') || name.includes('천안') || name.includes('아산') || name.includes('태안')) return '충남';
+                    if (name.includes('전북') || name.includes('전주') || name.includes('군산')) return '전북';
+                    if (name.includes('전남') || name.includes('여수') || name.includes('순천') || name.includes('무안')) return '전남';
+                    if (name.includes('경북') || name.includes('경주') || name.includes('구미')) return '경북';
+                    if (name.includes('경남') || name.includes('김해') || name.includes('양산') || name.includes('창원') || name.includes('정산')) return '경남';
+                    if (name.includes('제주') || name.includes('나인브릿지') || name.includes('엘리시안제주') || name.includes('핀크스')) return '제주';
+                    
+                    if (name.includes('베네스트') || name.includes('가평') || name.includes('안양') || name.includes('용인') || name.includes('여주') || name.includes('이천') || name.includes('곤지암') || name.includes('남양주') || name.includes('포천') || name.includes('파주')) return '경기';
+                    
+                    return '경기'; // 기본
+                }
+                const detectedRegion = detectRegion(req.golf_course);
+                
+                // 1. 지역 조건으로 1차 하드 필터링 (지역은 맞춤 필수 요소)
+                let regionMatchedPros = approvedPros.filter(pro => pro.regions && pro.regions.includes(detectedRegion));
+                
+                // 스마트 인접 지역 매칭 로직 도입
+                let isAdjacentMatched = false;
+                if (regionMatchedPros.length === 0) {
+                    const adjacents = {
+                        '서울': ['경기', '인천'],
+                        '인천': ['경기', '서울'],
+                        '경기': ['서울', '인천'],
+                        '부산': ['경남', '울산'],
+                        '경남': ['부산', '울산'],
+                        '울산': ['부산', '경남'],
+                        '대구': ['경북', '경남'],
+                        '경북': ['대구', '경남', '울산']
+                    };
+                    const adjList = adjacents[detectedRegion] || [];
+                    regionMatchedPros = approvedPros.filter(pro => 
+                        pro.regions && adjList.some(adj => pro.regions.includes(adj))
+                    );
+                    if (regionMatchedPros.length > 0) {
+                        isAdjacentMatched = true;
+                    }
+                }
+                
+                // 2. 지역 매칭 프로 중 요일까지 완벽히 일치하는 프로 (2차 소프트 필터링)
+                const perfectMatchedPros = regionMatchedPros.filter(pro => pro.available_days && pro.available_days.includes(dayOfWeek));
+                
+                if (perfectMatchedPros.length > 0) {
+                    // 완벽하게 요일과 지역이 모두 가능한 프로가 있는 경우
+                    conditionDiv.style.backgroundColor = '#f0fbf5';
+                    conditionDiv.style.borderColor = 'rgba(11, 54, 33, 0.1)';
+                    conditionDiv.style.color = 'var(--primary-color)';
+                    
+                    if (isAdjacentMatched) {
+                        conditionDiv.innerHTML = `⚡ <strong>인접 지역 스마트 매칭 완료:</strong> <strong>[코스: ${detectedRegion} / 프로: 인접 지역]</strong> 해당 요일(${dayOfWeek}요일) 활동이 가능한 인접 지역 프로 <strong>${perfectMatchedPros.length}명</strong>이 매칭 추천되었습니다.`;
+                    } else {
+                        conditionDiv.innerHTML = `⛳ <strong>자동 매칭 최적 조건 검색 완료:</strong> <strong>[요일: ${dayOfWeek}요일 / 지역: ${detectedRegion}]</strong> 활동이 모두 가능한 프로 <strong>${perfectMatchedPros.length}명</strong>이 매칭 추천되었습니다.`;
+                    }
+                    
+                    selectElement.innerHTML = perfectMatchedPros.map(pro => 
+                        `<option value="${pro.id}">⭐ ${this.escapeHtml(pro.name)} 프로 (자격번호: ${this.escapeHtml(pro.cert_number)}) - 요일: ${this.escapeHtml(pro.available_days || '-')} / 지역: ${this.escapeHtml(pro.regions || '-')}</option>`
+                    ).join('');
+                } else if (regionMatchedPros.length > 0) {
+                    // 동일한 지역의 프로는 존재하지만 요일이 맞지 않는 경우 (지역 우선 노출)
+                    conditionDiv.style.backgroundColor = '#fffbeb';
+                    conditionDiv.style.borderColor = '#fde68a';
+                    conditionDiv.style.color = '#b45309';
+                    
+                    if (isAdjacentMatched) {
+                        conditionDiv.innerHTML = `⚠️ <strong>요일 조정 필요 (인접 지역):</strong> 인접 지역 프로 <strong>${regionMatchedPros.length}명</strong>이 존재하지만, <strong>[요일: ${dayOfWeek}요일]</strong> 가능 일정이 맞지 않습니다. 협의 후 요일을 조정해 주세요.`;
+                    } else {
+                        conditionDiv.innerHTML = `⚠️ <strong>요일 조정 필요:</strong> <strong>[지역: ${detectedRegion}]</strong>에서 활동하는 프로 <strong>${regionMatchedPros.length}명</strong>이 존재하지만, <strong>[요일: ${dayOfWeek}요일]</strong> 가능 일정이 맞지 않습니다. 협의 후 요일을 조정해 주세요.`;
+                    }
+                    
+                    selectElement.innerHTML = regionMatchedPros.map(pro => 
+                        `<option value="${pro.id}">${this.escapeHtml(pro.name)} 프로 (자격번호: ${this.escapeHtml(pro.cert_number)}) - 요일: ${this.escapeHtml(pro.available_days || '-')} / 지역: ${this.escapeHtml(pro.regions || '-')}</option>`
+                    ).join('');
+                } else {
+                    // 해당 지역 활동 프로가 단 한 명도 없는 최후의 예외 상황
+                    conditionDiv.style.backgroundColor = '#fef2f2';
+                    conditionDiv.style.borderColor = '#fca5a5';
+                    conditionDiv.style.color = '#991b1b';
+                    conditionDiv.innerHTML = `⚠️ <strong>동일 지역 프로 없음:</strong> <strong>[지역: ${detectedRegion}]</strong>에서 활동하는 프로가 없습니다. 전체 정식 파트너 프로 목록을 불러옵니다.`;
+                    
+                    selectElement.innerHTML = approvedPros.map(pro => 
+                        `<option value="${pro.id}">${this.escapeHtml(pro.name)} 프로 (자격번호: ${this.escapeHtml(pro.cert_number)}) - 요일: ${this.escapeHtml(pro.available_days || '-')} / 지역: ${this.escapeHtml(pro.regions || '-')}</option>`
+                    ).join('');
+                }
+                
+                document.getElementById('match-modal').style.display = 'flex';
+            },
+
+            closeMatchModal: function() {
+                document.getElementById('match-modal').style.display = 'none';
+                this.currentMatchReqId = null;
+            },
+
+            confirmMatchRequest: async function() {
+                const selectElement = document.getElementById('match-pro-select');
+                const proId = selectElement.value;
+                
+                if (!proId) {
+                    alert("매칭할 프로를 선택해 주세요. 승인 완료된 프로만 매칭 가능합니다.");
+                    return;
+                }
+                
+                if (!this.currentMatchReqId) return;
+                
+                try {
+                    const response = await fetch('/api/admin/match', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            id: this.currentMatchReqId, 
+                            pro_id: parseInt(proId, 10), 
+                            key: this.currentKey 
+                        })
+                    });
+                    const resData = await response.json();
+                    
+                    if (!response.ok) {
+                        alert(resData.error || '매칭 처리에 실패했습니다.');
+                        return;
+                    }
+                    
+                    this.closeMatchModal();
+                    
+                    const toast = document.getElementById('toast');
+                    toast.innerText = "✅ 매칭 완료 및 결제 요청 발송 성공!";
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2500);
+                    
+                    this.fetchData();
+                } catch (e) {
+                    alert('서버 통신 중 오류가 발생했습니다.');
+                }
+            },
+
+            approvePro: async function(proId) {
+                if (!await window.withproConfirm("해당 프로의 KPGA/KLPGA 회원 자격을 최종 승인하시겠습니까? 완료 시 정식 파트너로 활성화됩니다.")) return;
+                
+                try {
+                    const response = await fetch('/api/admin/approve-pro', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            id: proId, 
+                            key: this.currentKey 
+                        })
+                    });
+                    const resData = await response.json();
+                    
+                    if (!response.ok) {
+                        alert(resData.error || '프로 승인 처리에 실패했습니다.');
+                        return;
+                    }
+                    
+                    const toast = document.getElementById('toast');
+                    toast.innerText = "✅ 프로 회원 승인 완료 및 파트너 활성화 성공!";
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2500);
+                    
+                    this.fetchData();
+                } catch (e) {
+                    alert('서버 통신 중 오류가 발생했습니다.');
+                }
+            },
+
+            /* 유틸리티 함수 */
+            formatDate: function(dbDateStr) {
+                if (!dbDateStr) return '-';
+                // SQLite 기본 TIMESTAMP format: YYYY-MM-DD HH:MM:SS
+                // 좀더 읽기 쉬운 한국형 날짜/시간으로 변경
+                try {
+                    const d = new Date(dbDateStr.replace(' ', 'T') + 'Z'); // UTC 기준으로 취급하여 로컬 시간으로 변환
+                    if (isNaN(d.getTime())) {
+                        return dbDateStr; // 파싱 실패 시 원본 문자열 노출
+                    }
+                    // 한국 로컬 표준 시각에 맞춰 9시간 보정
+                    const kstDate = new Date(d.getTime() - (9 * 60 * 60 * 1000));
+                    const yy = String(kstDate.getFullYear()).slice(-2);
+                    const mm = String(kstDate.getMonth() + 1).padStart(2, '0');
+                    const dd = String(kstDate.getDate()).padStart(2, '0');
+                    const hh = String(kstDate.getHours()).padStart(2, '0');
+                    const min = String(kstDate.getMinutes()).padStart(2, '0');
+                    return `${yy}.${mm}.${dd} ${hh}:${min}`;
+                } catch(e) {
+                    return dbDateStr;
+                }
+            },
+
+            escapeHtml: function(str) {
+                if (!str) return '';
+                return str
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        };
+
+        // DOM 완성 시 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            adminApp.init();
+        });
+    </script>
+    <!-- 매칭 선택 모달 -->
+    <div id="match-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 61, 46, 0.4); backdrop-filter: blur(4px); z-index: 1100; align-items: center; justify-content: center;">
+        <div class="modal-card" style="background: #ffffff; width: 100%; max-width: 480px; border-radius: 20px; box-shadow: 0 20px 50px rgba(11,61,46,0.15); border: 1px solid rgba(11,61,46,0.05); animation: modalFadeIn 0.3s ease-out; overflow: hidden;">
+            <div class="modal-header" style="background-color: var(--primary-color); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 18px; font-weight: 700; margin: 0;">🏌️‍♂️ 레슨 매칭 프로 배정</h3>
+                <span onclick="adminApp.closeMatchModal()" style="cursor: pointer; font-size: 20px; font-weight: 500; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">✕</span>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <p style="font-size: 14.5px; color: var(--text-color); line-height: 1.6; margin-bottom: 12px; font-weight: 500;">
+                    선택하신 레슨 매칭 건(골프장: <strong id="modal-golf-course" style="color: var(--primary-color);">-</strong>)에 배정할 **승인완료 프로**를 선택해 주세요.
+                </p>
+                <div id="modal-match-condition" style="background-color: #f0fbf5; border: 1px solid rgba(11, 54, 33, 0.1); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--primary-color); margin-bottom: 20px; line-height: 1.6; text-align: left; display: block;">
+                    🔍 매칭 조건을 계산하고 있습니다...
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 13.5px; font-weight: 700; color: var(--primary-color); display: block; margin-bottom: 8px;">배정 대상 프로 선택</label>
+                    <select id="match-pro-select" class="input-field" style="width: 100%; padding: 14px; border-radius: 10px; border: 1.5px solid var(--border-color); font-size: 15px; font-weight: 600; outline: none; background-color: #FAFCFB;">
+                        <!-- JS에서 승인완료 프로 목록 동적 주입 -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 16px 24px; background-color: #FAFCFB; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
+                <button onclick="adminApp.closeMatchModal()" style="background-color: transparent; border: 1.5px solid var(--border-color); color: var(--text-color); padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--transition);">취소</button>
+                <button onclick="adminApp.confirmMatchRequest()" style="background-color: var(--primary-color); border: none; color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--transition);" onmouseover="this.style.backgroundColor='var(--primary-hover)'" onmouseout="this.style.backgroundColor='var(--primary-color)'">배정 및 매칭완료</button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body>
+</html>

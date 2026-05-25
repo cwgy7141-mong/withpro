@@ -1,0 +1,20 @@
+# Local database
+withpro.db
+withpro.db-journal
+
+# Firebase Secrets (DO NOT COMMIT!)
+firebase-service-account.json
+
+# Python virtual environment and cache
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db

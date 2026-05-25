@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>withPRO - 골프 프로 매칭 서비스</title>
+    <link rel="stylesheet" href="styles.css?v=8.2">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- 홈 (선택) 화면 -->
+        <div id="view-home" class="view active">
+            <div class="logo-container">
+                <img src="logo.svg" alt="withPRO Logo" class="main-logo">
+            </div>
+            <h1 class="main-title">KPGA KLPGA 프로와<br>걷는 18홀의 기적</h1>
+            
+            <div class="home-layout-container">
+                <!-- 1. 일반 골퍼용 카드 섹션 -->
+                <div class="home-card amateur">
+                    <div class="home-card-header">
+                        <span class="card-tag amateur">Golfer</span>
+                        <h3 class="card-heading">아마추어 골퍼님, 환영합니다!</h3>
+                    </div>
+                    <button class="btn btn-primary full-width btn-toss-bold" onclick="app.navigate('view-regular')">
+                        필드레슨 프로찾기 <span class="btn-arrow">🏌️‍♂️</span>
+                    </button>
+                    <button class="home-sub-link amateur-link" onclick="app.checkMyBookings()">
+                        <span class="sub-link-text">🗓️ 내 예약 및 결제 현황 확인</span>
+                        <span class="sub-link-chevron">→</span>
+                    </button>
+                </div>
+
+                <!-- 2. 레슨 프로용 카드 섹션 -->
+                <div class="home-card pro">
+                    <div class="home-card-header">
+                        <span class="card-tag pro">Partner Pro</span>
+                        <h3 class="card-heading">레슨 프로 전용</h3>
+                    </div>
+                    <button class="btn btn-pro-action full-width" onclick="app.navigate('view-pro')">
+                        레슨 프로로 활동하기 <span class="btn-arrow">→</span>
+                    </button>
+                    <div class="pro-login-box">
+                        <span class="pro-login-desc">이미 파트너 프로이신가요?</span>
+                        <button class="btn-pro-login" onclick="app.promptProLogin()">토스인증으로 자동 로그인 🏌️‍♂️ →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 필드레슨 매칭 폼 (아마추어) -->
+        <div id="view-regular" class="view">
+            <header class="header">
+                <button class="icon-btn" onclick="app.navigate('view-home')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h2>필드레슨 매칭</h2>
+                <div class="placeholder-icon"></div>
+            </header>
+            <div class="content scrollable">
+                <div class="form-header-center">
+                    <img src="logo.svg" alt="withPRO" class="small-logo">
+                    <p class="subtitle">예약하신 라운딩 정보를 입력하시면<br>최적의 필드레슨 프로를 매칭해 드립니다.</p>
+                </div>
+
+                <!-- 신청자 이름 카드 -->
+                <div class="input-card" onclick="document.getElementById('lesson-user-name').focus()">
+                    <div class="input-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="input-card-content">
+                        <span class="input-card-label">신청자 이름</span>
+                        <input type="text" id="lesson-user-name" placeholder="실명을 입력해 주세요" class="card-input-field">
+                    </div>
+                </div>
+
+                <!-- 신청자 연락처 카드 -->
+                <div class="input-card" onclick="document.getElementById('lesson-user-contact').focus()">
+                    <div class="input-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                    </div>
+                    <div class="input-card-content">
+                        <span class="input-card-label">신청자 연락처</span>
+                        <input type="text" id="lesson-user-contact" placeholder="연락처를 입력해 주세요 (예: 010-1234-5678)" class="card-input-field">
+                    </div>
+                </div>
+
+                <!-- 골프장 입력 카드 -->
+                <div class="input-card" onclick="document.getElementById('lesson-golf-course').focus()">
+                    <div class="input-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                            <line x1="9" y1="3" x2="9" y2="18"></line>
+                            <line x1="15" y1="6" x2="15" y2="21"></line>
+                        </svg>
+                    </div>
+                    <div class="input-card-content">
+                        <span class="input-card-label">라운딩 골프장</span>
+                        <input type="text" id="lesson-golf-course" placeholder="예) 베어즈베스트 청라 CC" class="card-input-field">
+                    </div>
+                </div>
+
+                <!-- 라운딩 날짜 카드 -->
+                <div class="input-card" onclick="document.getElementById('lesson-date').showPicker ? document.getElementById('lesson-date').showPicker() : document.getElementById('lesson-date').focus()">
+                    <div class="input-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div class="input-card-content">
+                        <span class="input-card-label">라운딩 날짜</span>
+                        <div class="display-value placeholder" id="display-date">날짜를 선택해 주세요</div>
+                        <input type="date" id="lesson-date" style="position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; pointer-events: none;">
+                    </div>
+                    <div class="input-card-chevron">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 티오프 시간 카드 -->
+                <div class="input-card" onclick="document.getElementById('lesson-time').showPicker ? document.getElementById('lesson-time').showPicker() : document.getElementById('lesson-time').focus()">
+                    <div class="input-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="input-card-content">
+                        <span class="input-card-label">티오프 시간</span>
+                        <div class="display-value placeholder" id="display-time">시간을 선택해 주세요</div>
+                        <input type="time" id="lesson-time" style="position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; pointer-events: none;">
+                    </div>
+                    <div class="input-card-chevron">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="guide-box">
+                    <div class="guide-title">🏌️‍♂️ 1. 예약이용 및 비용안내</div>
+                    <div class="guide-text">
+                        <strong>예약비:</strong> 50,000원 (노쇼 방지를 위한 예약금)<br>
+                        <strong>필드 레슨비:</strong> 총 50만 원 (18홀 기준)<br>
+                        <strong>라운딩 인원:</strong> 프로님을 포함하여 3인 또는 4인
+                    </div>
+                    
+                    <div class="guide-title">💰 2. 현장에서 발생하는 추가 비용 (필수 확인)</div>
+                    <div class="guide-text">
+                        레슨비 외에 골프장 자체에 지불하셔야 하는 현장 비용은 개별 부담입니다.<br>
+                        <strong>개인 비용:</strong> 골퍼님 본인의 그린피, 카트비, 캐디피<br>
+                        <strong>프로님 지원 비용:</strong> 함께 동반하시는 프로님의 그린피, 카트비, 캐디피는 참석하신 아마추어 회원님들이 균등하게 나누어(N분의 1) 부담해 주셔야 합니다.<br><br>
+                        <span style="color: var(--primary-color); font-weight: 600;">※ 매너 있는 골프 문화를 위해 프로님의 현장 비용을 지원해 주시는 점 양해 부탁드립니다.</span>
+                    </div>
+
+                    <div class="guide-title">🎒 3. 라운딩 전, 이것만은 꼭 챙겨주세요!</div>
+                    <div class="guide-text">
+                        <strong>티오프 30분 전 도착:</strong> 프로님과 가볍게 인사를 나누고 스트레칭을 할 수 있도록 여유 있게 도착해 주세요.
+                    </div>
+
+                    <div class="guide-highlight">
+                        💌 골퍼님께 드리는 약속<br>
+                        저희 앱에 등록된 모든 프로님들은 100% 자격 검증을 마친 KPGA · KLPGA 정회원입니다. 신원과 실력이 확실한 최고의 전문가가 골퍼님의 스코어 향상과 잊지 못할 18홀을 책임질 예정이니 기대하셔도 좋습니다!
+                    </div>
+                </div>
+
+            </div>
+            <div class="bottom-action">
+                <button class="btn btn-primary full-width" onclick="app.requestLesson()">필드레슨 프로매칭 신청</button>
+            </div>
+        </div>
+
+        <!-- 프로 회원 가입 폼 -->
+        <div id="view-pro" class="view">
+            <header class="header">
+                <button class="icon-btn" onclick="app.navigate('view-home')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h2>프로 모드 설정</h2>
+                <div class="placeholder-icon"></div>
+            </header>
+            <div class="content scrollable">
+                <div class="pro-banner mb-4">
+                    <img src="logo.svg" alt="withPRO" class="tiny-logo">
+                    <h3 class="banner-title">프로를 위한 특별한 혜택</h3>
+                    <p class="banner-desc">withPRO에서 당신의 전문성을 더 많은 회원들에게 알리고 성장의 기회를 잡으세요. 간단한 정보 설정만으로 준비가 완료됩니다. (기본 정보는 토스에서 가져옵니다)</p>
+                </div>
+
+                <h4 class="section-title mt-4">프로필 기본 정보</h4>
+                
+                <!-- 프로필 사진 등록 -->
+                <div class="form-group" style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 24px; text-align: center;">
+                    <div class="label-row" style="width: 100%;">
+                        <label style="font-weight: 700;">프로필 사진</label>
+                        <span class="required-badge">필수 항목</span>
+                    </div>
+                    <div class="profile-pic-container" style="position: relative; width: 100px; height: 100px; border-radius: 50%; background-color: #f3f4f6; border: 2.5px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; margin-top: 8px; transition: all 0.25s ease;" onclick="document.getElementById('pro-profile-file').click()">
+                        <img id="pro-profile-preview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <div id="pro-profile-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 11px; font-weight: 700; gap: 4px;">
+                            <span style="font-size: 24px;">📷</span>
+                            <span>사진 등록</span>
+                        </div>
+                    </div>
+                    <input type="file" id="pro-profile-file" accept="image/jpeg, image/png, image/gif, image/heic, image/webp" style="display: none;" onchange="app.handleProfilePicChange(event)">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label>이름</label>
+                        <span class="required-badge">필수 항목</span>
+                    </div>
+                    <input type="text" id="pro-name" placeholder="프로님의 실명을 입력해주세요" value="">
+                </div>
+                
+                <div class="form-group mt-3">
+                    <div class="label-row">
+                        <label>전화번호</label>
+                        <span class="required-badge">필수 항목</span>
+                    </div>
+                    <input type="text" id="pro-contact" placeholder="연락처를 입력해주세요 (예: 010-1234-5678)" value="">
+                </div>
+
+                <h4 class="section-title mt-4">자격 및 활동 정보</h4>
+                
+                <div class="form-group">
+                    <div class="label-row">
+                        <label>자격증 종류</label>
+                        <span class="required-badge">필수 선택</span>
+                    </div>
+                    <select id="pro-cert-type" class="pro-select">
+                        <option value="KPGA 투어프로">KPGA 투어프로</option>
+                        <option value="KLPGA 정회원">KLPGA 정회원</option>
+                        <option value="KPGA 프로">KPGA 프로</option>
+                        <option value="KLPGA 준회원">KLPGA 준회원</option>
+                        <option value="기타 티칭프로">기타 티칭프로</option>
+                    </select>
+                </div>
+
+                <div class="form-group mt-3">
+                    <div class="label-row">
+                        <label>회원번호 (자격증 번호)</label>
+                        <span class="required-badge">필수 항목</span>
+                    </div>
+                    <input type="text" id="pro-cert-num" placeholder="예) 01234 (KPGA/KLPGA 회원 번호)">
+                </div>
+
+                <div class="form-group mt-4">
+                    <div class="label-row">
+                        <label>레슨 가능 요일</label>
+                        <span class="required-badge">복수 선택 가능</span>
+                    </div>
+                    <div class="grid-7 gap-1 mt-2" id="pro-days">
+                        <button class="day-btn active">월</button>
+                        <button class="day-btn active">화</button>
+                        <button class="day-btn active">수</button>
+                        <button class="day-btn active">목</button>
+                        <button class="day-btn active">금</button>
+                        <button class="day-btn">토</button>
+                        <button class="day-btn">일</button>
+                    </div>
+                </div>
+
+                <div class="form-group mt-4">
+                    <div class="label-row">
+                        <label>레슨 가능 지역</label>
+                        <span class="required-badge">복수 선택 가능</span>
+                    </div>
+                    <div class="grid-3 gap-2 mt-2">
+                        <button class="grid-btn-simple active">서울</button>
+                        <button class="grid-btn-simple">경기</button>
+                        <button class="grid-btn-simple">인천</button>
+                        <button class="grid-btn-simple">부산</button>
+                        <button class="grid-btn-simple">대구</button>
+                        <button class="grid-btn-simple">광주</button>
+                        <button class="grid-btn-simple">대전</button>
+                        <button class="grid-btn-simple">울산</button>
+                        <button class="grid-btn-simple">세종</button>
+                        <button class="grid-btn-simple">강원</button>
+                        <button class="grid-btn-simple">충북</button>
+                        <button class="grid-btn-simple">충남</button>
+                        <button class="grid-btn-simple">전북</button>
+                        <button class="grid-btn-simple">전남</button>
+                        <button class="grid-btn-simple">경북</button>
+                        <button class="grid-btn-simple">경남</button>
+                        <button class="grid-btn-simple">제주</button>
+                        <button class="grid-btn-simple">기타</button>
+                    </div>
+                </div>
+
+                <div class="partner-card mt-4 mb-4">
+                    <h4 class="partner-title">원하는 시간에, 원하는 곳에서</h4>
+                    <p class="partner-desc">쉬는 날이나 빈 시간대를 활용해 추가적인 필드 레슨 수익을 창출해 보세요. 내 일정에 딱 맞는 라운딩 매칭을 실시간으로 연결해 드립니다.</p>
+                    <a href="#" class="partner-link" onclick="event.preventDefault(); app.navigate('view-pro-guide')">활동 가이드 알아보기 →</a>
+                </div>
+                <!-- 이미 등록된 프로 로그인 가이드 -->
+                <div class="pro-login-link-box mb-4">
+                    <span class="pro-login-link" onclick="app.promptProLogin()">이미 파트너 프로로 등록하셨나요? 전화번호 뒷자리로 로그인</span>
+                </div>
+            </div>
+            <div class="bottom-action">
+                <button class="btn btn-primary full-width" onclick="app.registerPro()">withPRO 시작하기</button>
+            </div>
+        </div>
+
+        <!-- 프로 활동 가이드 화면 -->
+        <div id="view-pro-guide" class="view">
+            <header class="header">
+                <button class="icon-btn" onclick="app.navigate('view-pro')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h2>프로 활동 가이드</h2>
+                <div class="placeholder-icon"></div>
+            </header>
+            <div class="content scrollable">
+                
+                <!-- 웰컴 배너 -->
+                <div class="guide-welcome-card">
+                    <span class="guide-welcome-badge">withPRO Partner</span>
+                    <h3 class="guide-welcome-title">프로님, 반갑습니다! 🏌️‍♂️</h3>
+                    <p class="guide-welcome-desc">원하는 시간에, 원하는 곳에서 자유롭게 라운딩하며 안전하고 확실한 수익을 창출하세요.</p>
+                </div>
+
+                <!-- 1. 서비스 이용 방법 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>📱</span> 서비스 이용 방법
+                    </div>
+                    <div class="guide-step-list">
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 1</div>
+                            <h4 class="guide-step-title">프로필 등록</h4>
+                            <p class="guide-step-desc">KPGA / KLPGA 정회원 자격증 정보와 주 활동 지역을 입력해 주세요. 운영진의 자격 심사 승인 완료 후 즉시 활동을 시작하실 수 있습니다.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 2</div>
+                            <h4 class="guide-step-title">레슨 가능 요일 및 일정 설정</h4>
+                            <p class="guide-step-desc">활동 가능한 요일 및 지역을 미리 체크해 두시면 맞춤 매칭 확률이 훨씬 높아집니다. <em>(마이페이지에서 수시로 활동 설정을 수정하실 수 있습니다)</em></p>
+                        </div>
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 3</div>
+                            <h4 class="guide-step-title">매칭 신청 확인 및 수락</h4>
+                            <p class="guide-step-desc">아마추어 골퍼가 등록한 라운딩 날짜, 골프장, 티오프 시간을 확인한 후, 프로님의 스케줄에 맞는 요청을 수락하여 매칭이 성사됩니다.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 4</div>
+                            <h4 class="guide-step-title">라운딩 레슨 진행</h4>
+                            <p class="guide-step-desc">매칭이 최종 확정되면 약속된 골프장으로 출동하여 아마추어 고객님과 동반 필드 레슨 및 18홀 라운딩을 즐겁게 진행합니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 수익 및 정산 안내 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>💰</span> 수익 및 정산 안내
+                    </div>
+                    <div class="guide-grid-2">
+                        <div class="guide-icon-card">
+                            <div class="guide-card-icon-wrapper">💸</div>
+                            <h4 class="guide-card-title">투명한 직거래 정산</h4>
+                            <p class="guide-card-desc">중개 수수료 걱정 없이 라운딩 종료 후 현장에서 고객에게 직접 레슨비(50만 원)를 정산받으시면 됩니다.</p>
+                        </div>
+                        <div class="guide-icon-card">
+                            <div class="guide-card-icon-wrapper">🛡️</div>
+                            <h4 class="guide-card-title">노쇼 방지 보상제</h4>
+                            <p class="guide-card-desc">예약 확정 후 고객의 갑작스러운 변심으로 인해 일정이 취소되더라도, 사전 적립된 예약금 5만 원이 프로님께 100% 보상됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 필드 레슨 매너 가이드 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>🤝</span> 필드 레슨 매너 가이드
+                    </div>
+                    <div class="guide-step-list">
+                        <div class="guide-step-card">
+                            <h4 class="guide-step-title">⏰ 티오프 시간 엄수</h4>
+                            <p class="guide-step-desc">첫 홀 티샷 전 충분히 인사를 나누고 웜업하실 수 있도록, 최소 티오프 30분 전까지 골프장 로비/스타트하우스에 도착해 주세요.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <h4 class="guide-step-title">🎯 아마추어 니즈 맞춤형 레슨</h4>
+                            <p class="guide-step-desc">라운딩 전 고객님의 스윙 스타일과 고민 요소를 파악해 코스 공략법, 숏게임 관리법 등 실질적으로 도움이 되는 원포인트 레슨을 제공해 주세요.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <h4 class="guide-step-title">👔 드레스코드 및 예절 준수</h4>
+                            <p class="guide-step-desc">해당 명문 골프장의 예절 규정 및 드레스코드를 준수하여, 공인 자격을 갖춘 프로로서의 단정하고 신뢰감 높은 이미지를 보여주세요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 활동 등급 및 혜택 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>🏆</span> 활동 등급 및 혜택
+                    </div>
+                    <div class="guide-reward-banner">
+                        <div class="guide-reward-header">
+                            <span class="guide-reward-badge">우수 파트너 혜택</span>
+                            <h4 class="guide-reward-title">우수 프로 인증 배지 부여</h4>
+                        </div>
+                        <p class="guide-reward-desc">누적 라운딩 매칭 횟수와 회원 만족도 평점을 기준으로 선정합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결제 화면 -->
+        <div id="view-payment" class="view">
+            <header class="header">
+                <button class="icon-btn" onclick="app.navigate('view-home')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h2>결제하기</h2>
+                <div class="placeholder-icon"></div>
+            </header>
+            <div class="content scrollable" style="padding-bottom: 90px;">
+                <div class="payment-summary-card">
+                    <div class="payment-title">필드레슨 매칭 예약금</div>
+                    <div class="payment-subtitle">매칭 완료 후 최종 라운딩 확정을 위한 예약금 결제입니다.</div>
+                    <div class="payment-price">50,000원</div>
+                </div>
+
+                <div class="payment-methods-tabs">
+                    <button class="pay-tab active" onclick="app.switchPayMethod('toss')">토스페이</button>
+                    <button class="pay-tab" onclick="app.switchPayMethod('card')">신용카드</button>
+                    <button class="pay-tab" onclick="app.switchPayMethod('transfer')">계좌이체</button>
+                </div>
+
+                <div class="payment-methods-content">
+                    <!-- 토스페이 상세 정보 -->
+                    <div id="pay-detail-toss" class="pay-detail-panel active">
+                        <div class="toss-benefit-box">
+                            <span class="benefit-badge">혜택</span> 토스머니 결제 시 1.5% 적립 및 소득공제
+                        </div>
+                        <div class="toss-user-profile">
+                            <div class="toss-avatar">🏌️</div>
+                            <div class="toss-user-info">
+                                <span class="toss-username">아마추어 회원님</span>
+                                <span class="toss-phone">010-****-****</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 신용카드 상세 정보 -->
+                    <div id="pay-detail-card" class="pay-detail-panel">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #4B5563;">카드사 선택</label>
+                            <select class="pay-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
+                                <option>신한카드</option>
+                                <option>국민카드</option>
+                                <option>삼성카드</option>
+                                <option>현대카드</option>
+                                <option>BC카드</option>
+                            </select>
+                        </div>
+                        <div class="grid-2 gap-2">
+                            <div class="form-group">
+                                <label style="font-size: 13px; font-weight: 600; color: #4B5563;">할부 기간</label>
+                                <select class="pay-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
+                                    <option>일시불</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 13px; font-weight: 600; color: #4B5563;">포인트 사용</label>
+                                <select class="pay-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
+                                    <option>사용 안함</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 계좌이체 상세 정보 -->
+                    <div id="pay-detail-transfer" class="pay-detail-panel">
+                        <div class="toss-benefit-box" style="background-color: #FFFBEB; border-color: #FDE68A; color: #92400E; font-size: 13px;">
+                            ⚠️ 은행 점검 시간(23:30 ~ 00:30)에는 이체가 제한될 수 있습니다.
+                        </div>
+                        <div class="form-group" style="margin-top: 8px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #4B5563;">출금 은행</label>
+                            <select class="pay-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
+                                <option>토스뱅크</option>
+                                <option>신한은행</option>
+                                <option>국민은행</option>
+                                <option>카카오뱅크</option>
+                                <option>우리은행</option>
+                                <option>농협은행</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-safety-guide">
+                    🛡️ 토스 안심결제 시스템이 작동 중입니다. 고객님의 금융 정보는 고도로 암호화되어 안전하게 보호됩니다.
+                </div>
+            </div>
+            <div class="bottom-action" style="background: linear-gradient(to top, #F3F4F6 80%, rgba(243,244,246,0));">
+                <button class="btn btn-primary full-width" style="background-color: #0064FF; box-shadow: 0 4px 12px rgba(0, 100, 255, 0.2);" onclick="app.executePayment()">50,000원 결제하기</button>
+            </div>
+        </div>
+
+        <!-- 결제 프로세싱 중 오버레이 -->
+        <div id="payment-loading-overlay" class="payment-overlay">
+            <div class="payment-overlay-content">
+                <div class="toss-spinner"></div>
+                <h3 class="overlay-title">안전하게 결제 처리 중...</h3>
+                <p class="overlay-subtitle">토스페이 금융망을 통해 거래를 승인하고 있습니다.<br>새로고침하거나 창을 닫지 마세요.</p>
+            </div>
+        </div>
+
+        <!-- 결제 완료/성공 오버레이 -->
+        <div id="payment-success-overlay" class="payment-overlay">
+            <div class="payment-overlay-content success-card-bounce">
+                <div class="success-checkmark-circle">
+                    <svg class="checkmark-svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle-path" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark-kick-path" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                </div>
+                <h2 class="success-title">결제가 완료되었습니다!</h2>
+                <p class="success-subtitle">50,000원 예약금이 성공적으로 수납되었습니다.<br>필드레슨 매칭이 최종 확정되었습니다.</p>
+                <button class="btn btn-primary" style="background-color: #00C897; border: none; padding: 12px 30px; font-size: 16px; border-radius: 8px; color: white; margin-top: 24px; box-shadow: 0 4px 12px rgba(0,200,151,0.25);" onclick="app.closeSuccessOverlay()">확인</button>
+                <div id="confetti-container"></div>
+            </div>
+        </div>
+
+        <!-- 프로 매칭 수락 화면 -->
+        <div id="view-pro-accept" class="view">
+            <header class="header">
+                <h2>필드레슨 매칭 제안 🏌️‍♂️</h2>
+                <div class="placeholder-icon"></div>
+            </header>
+            <div class="content scrollable" style="padding-bottom: 30px;">
+                <div id="pro-accept-container"></div>
+            </div>
+        </div>
+
+        <!-- 내 예약 및 결제 현황 화면 -->
+        <div id="view-my-bookings" class="view">
+            <header class="header">
+                <button class="icon-btn" onclick="app.navigate('view-home')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h2>예약 및 결제 현황</h2>
+                <div class="placeholder-icon"></div>
+            </header>
+            <div class="content scrollable" style="padding-bottom: 30px;">
+                <div id="my-bookings-container"></div>
+            </div>
+        </div>
+
+        <!-- 프로 마이페이지 뷰 -->
+        <div id="view-pro-mypage" class="view">
+            <header class="header">
+                <button class="icon-btn" onclick="app.navigate('view-home')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h2>프로 마이페이지 🏌️‍♂️</h2>
+                <button class="logout-btn-pro" onclick="app.logoutPro()" style="background: none; border: none; font-size: 13.5px; font-weight: 700; color: var(--text-sub); cursor: pointer; padding: 6px;">
+                    로그아웃
+                </button>
+            </header>
+            <div class="content scrollable" style="padding-bottom: 120px;">
+                <!-- 프로 승인 상태 카드 -->
+                <div id="pro-status-container">
+                    <!-- JS 동적 렌더링 -->
+                </div>
+
+                <!-- 레슨 활동 설정 카드 (승인 완료 시 활성화) -->
+                <div class="pro-settings-card mt-4" id="pro-settings-section" style="display: none;">
+                    <h4 class="section-title" style="margin-bottom: 12px; font-size: 16px; font-weight: 800; color: var(--primary-color);">🏌️‍♂️ 레슨 활동 지역/요일 설정</h4>
+                    
+                    <div class="form-group">
+                        <div class="label-row" style="margin-bottom: 6px;">
+                            <label style="font-size: 14px; font-weight: 700;">레슨 가능 요일</label>
+                            <span class="required-badge">복수 선택 가능</span>
+                        </div>
+                        <div class="grid-7 gap-1 mt-2" id="pro-mypage-days">
+                            <button class="day-btn" onclick="this.classList.toggle('active')">월</button>
+                            <button class="day-btn" onclick="this.classList.toggle('active')">화</button>
+                            <button class="day-btn" onclick="this.classList.toggle('active')">수</button>
+                            <button class="day-btn" onclick="this.classList.toggle('active')">목</button>
+                            <button class="day-btn" onclick="this.classList.toggle('active')">금</button>
+                            <button class="day-btn" onclick="this.classList.toggle('active')">토</button>
+                            <button class="day-btn" onclick="this.classList.toggle('active')">일</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <div class="label-row" style="margin-bottom: 6px;">
+                            <label style="font-size: 14px; font-weight: 700;">레슨 가능 지역</label>
+                            <span class="required-badge">복수 선택 가능</span>
+                        </div>
+                        <div class="grid-3 gap-2 mt-2" id="pro-mypage-regions">
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">서울</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">경기</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">인천</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">부산</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">대구</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">광주</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">대전</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">울산</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">세종</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">강원</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">충북</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">충남</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">전북</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">전남</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">경북</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">경남</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">제주</button>
+                            <button class="grid-btn-simple" onclick="this.classList.toggle('active')">기타</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary full-width mt-4" style="padding: 14px;" onclick="app.updateProProfile()">활동 정보 수정 저장</button>
+                </div>
+
+                <!-- 매칭 내역 섹션 -->
+                <h4 class="section-title mt-4" style="font-size: 16px; font-weight: 800;">⛳ 매칭 완료 레슨 기록</h4>
+                <div id="pro-matches-container" class="mt-2">
+                    <!-- JS 동적 렌더링 -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 미니 슬라이딩 토스트 -->
+    <div id="pro-toast" class="pro-toast">✨ 활동 정보가 저장되었습니다!</div>
+    <script src="app.js?v=8.2"></script>
+</body>
+</html>

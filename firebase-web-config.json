@@ -1,0 +1,9 @@
+{
+  "apiKey": "mock-api-key-1234567890abcdef",
+  "authDomain": "withpro-mock-project.firebaseapp.com",
+  "projectId": "withpro-mock-project",
+  "storageBucket": "withpro-mock-project.appspot.com",
+  "messagingSenderId": "1234567890",
+  "appId": "1:1234567890:web:abcdef1234567890",
+  "vapidKey": "BEl62vUZG5v-X1_Jq7O4yWw4cW7J-1w3O5g4u7m5q8w2"
+}
