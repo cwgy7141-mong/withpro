@@ -7,10 +7,15 @@ import threading
 import sys
 from urllib.parse import urlparse
 
-# Force stdout to flush immediately for every print statement (prevent background buffering on Windows)
+# Force stdout and stderr to use utf-8 encoding and flush immediately (prevent background buffering and encoding errors on Windows)
 if hasattr(sys.stdout, 'reconfigure'):
     try:
-        sys.stdout.reconfigure(line_buffering=True)
+        sys.stdout.reconfigure(line_buffering=True, encoding='utf-8')
+    except Exception:
+        pass
+if hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(line_buffering=True, encoding='utf-8')
     except Exception:
         pass
 
@@ -811,7 +816,9 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                     if pro_row and pro_row['contact']:
                         pro_title = "🏌️‍♂️ 새로운 필드레슨 배정 제안"
                         pro_body = f"[withPRO] {pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요."
-                        pro_link = f"http://localhost:8000/index.html?view=pro-accept&id={row['id']}&pro_id={pro_id}"
+                        proto = self.headers.get('X-Forwarded-Proto', 'http')
+                        host_header = self.headers.get('Host', 'localhost:8000')
+                        pro_link = f"{proto}://{host_header}/index.html?view=pro-accept&id={row['id']}&pro_id={pro_id}"
                         dispatch_toss_notification(pro_row['contact'], pro_title, pro_body, pro_link)
                 
                 self.send_response(200)
@@ -1100,6 +1107,10 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 return
                 
             try:
+                proto = self.headers.get('X-Forwarded-Proto', 'http')
+                host_header = self.headers.get('Host', 'localhost:8000')
+                click_action_url = f"{proto}://{host_header}"
+                
                 from firebase_admin import messaging
                 message = messaging.Message(
                     notification=messaging.Notification(
@@ -1107,7 +1118,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         body=body
                     ),
                     data={
-                        "click_action": "http://localhost:8000"
+                        "click_action": click_action_url
                     },
                     token=token
                 )
