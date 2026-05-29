@@ -402,7 +402,7 @@ const app = {
         });
 
 
-        // 프로 파트너 레슨 가능 지역(다중 선택) 버튼 이벤트 연동
+        // 프로 회원 레슨 가능 지역(다중 선택) 버튼 이벤트 연동
         const proGrid = document.querySelector('#view-pro .grid-3');
         if (proGrid) {
             const btns = proGrid.querySelectorAll('.grid-btn-simple');
@@ -413,7 +413,7 @@ const app = {
             });
         }
 
-        // 프로 파트너 레슨 가능 요일 이벤트 연동
+        // 프로 회원 레슨 가능 요일 이벤트 연동
         const dayGrid = document.getElementById('pro-days');
         if (dayGrid) {
             const btns = dayGrid.querySelectorAll('.day-btn');
@@ -616,7 +616,7 @@ const app = {
         }
 
         if (!cert_number) {
-            alert("자격증 번호를 입력해 주세요.");
+            alert("회원번호를 입력해 주세요.");
             if (document.getElementById('pro-cert-num')) document.getElementById('pro-cert-num').focus();
             return;
         }
@@ -645,10 +645,10 @@ const app = {
             });
             const data = await response.json();
             
-            // 파트너 가입 완료 시 자동 로그인 처리 및 My Page 진입 유도
+            // 회원 가입 완료 시 자동 로그인 처리 및 My Page 진입 유도
             localStorage.setItem('withpro_pro_cert', cert_number);
             
-            alert("프로 파트너 등록 신청이 성공적으로 접수되었습니다! ⛳\n\n제출해 주신 자격 심사(KPGA/KLPGA 인증) 완료 후 즉시 정식으로 레슨 매칭 활동이 가능합니다.\n\n승인 심사는 통상 1~2영업일이 소요되며, 완료되는 대로 등록된 연락처로 신속히 안내해 드리겠습니다. withPRO 파트너로 함께해 주셔서 진심으로 감사드립니다.");
+            alert("프로 회원 가입 신청이 성공적으로 접수되었습니다! ⛳\n\n제출해 주신 회원 자격 심사(KPGA/KLPGA 회원 인증) 완료 후 즉시 정식으로 레슨 매칭 활동이 가능합니다.\n\n승인 심사는 통상 1~2영업일이 소요되며, 완료되는 대로 등록된 연락처로 신속히 안내해 드리겠습니다. withPRO 파트너로 함께해 주셔서 진심으로 감사드립니다.");
             
             // Firebase FCM 알림 연동 및 토큰 저장 시도
             app.initFirebase(contact, 'pro');
@@ -845,7 +845,7 @@ const app = {
                                 </li>
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">배정 프로</span>
-                                    <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 프로 (수락 대기)</span>
+                                    <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 회원 프로 (수락 대기)</span>
                                 </li>
                             </ul>
                             <div style="font-size: 13.5px; color: #b45309; line-height: 1.5; font-weight: 600; text-align: center; background-color: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
@@ -940,7 +940,7 @@ const app = {
         
         // 결제창 내의 사용자 실명 및 마스킹된 전화번호 바인딩 (보안 신뢰성 증대)
         const nameEl = document.querySelector('#view-payment .toss-username');
-        if (nameEl) nameEl.innerText = `${booking.user_name} 골퍼님`;
+        if (nameEl) nameEl.innerText = `${booking.user_name} 회원님`;
         
         const phoneEl = document.querySelector('#view-payment .toss-phone');
         if (phoneEl) phoneEl.innerText = app.maskContact(booking.user_contact);
@@ -1287,7 +1287,7 @@ const app = {
                                 자격번호: ${app.escapeHtml(profile.cert_number)}
                             </div>
                             <div style="font-size: 12.5px; color: #B45309; font-weight: 500; line-height: 1.4;">
-                                ⏳ KPGA/KLPGA 프로 자격 심사가 안전하게 진행 중입니다. (1~2일 소요)
+                                ⏳ KPGA/KLPGA 회원 자격 심사가 안전하게 진행 중입니다. (1~2일 소요)
                             </div>
                         </div>
                     </div>
@@ -1624,7 +1624,7 @@ const app = {
                 <p>withPRO는 프로 파트너 등록 심사, 레슨 매칭 제안 및 알림(SMS, Push) 발송, 아마추어 예약 고객과의 레슨 일정 조율 및 비상 시 긴급 연락 지원을 위해 개인정보를 수집합니다.</p>
                 
                 <h4>2. 수집하는 개인정보 항목</h4>
-                <p>필수 항목: 이름, 연락처(휴대폰 번호), 간편 비밀번호(핀번호), 자격증 종류 및 자격증 번호, 프로필 사진, 활동 가능 지역 및 요일</p>
+                <p>필수 항목: 이름, 연락처(휴대폰 번호), 간편 비밀번호(핀번호), 자격증 종류 및 회원번호, 프로필 사진, 활동 가능 지역 및 요일</p>
                 
                 <h4>3. 개인정보의 보유 및 이용 기간</h4>
                 <p>수집된 개인정보는 서비스 제공 목적이 달성되거나 파트너 탈퇴 또는 요구 시 즉시 안전하게 파기됩니다. 단, 관련 법령의 규정에 따라 보존할 필요가 있는 경우 해당 기간 동안 안전하게 분리 보관됩니다.</p>
