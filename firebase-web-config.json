@@ -1,9 +1,9 @@
 {
-  "apiKey": "mock-api-key-1234567890abcdef",
-  "authDomain": "withpro-mock-project.firebaseapp.com",
-  "projectId": "withpro-mock-project",
-  "storageBucket": "withpro-mock-project.appspot.com",
-  "messagingSenderId": "1234567890",
-  "appId": "1:1234567890:web:abcdef1234567890",
-  "vapidKey": "BEl62vUZG5v-X1_Jq7O4yWw4cW7J-1w3O5g4u7m5q8w2"
+  "apiKey": "AIzaSyCohCxeOrLD5YeMQQe1cn2ZwjjxmU-gOJc",
+  "authDomain": "withpro.firebaseapp.com",
+  "projectId": "withpro",
+  "storageBucket": "withpro.firebasestorage.app",
+  "messagingSenderId": "733222986961",
+  "appId": "1:733222986961:web:bbcebd0397b041c565d1f0",
+  "vapidKey": "BIOmGcU9_lq_ZLfs8qWHYD9-jz8jF_hf7clrw7f5frfM5uJtDGFvhZ40yFr81QUh3jlAXWVSnzUOJSVVuxxRZPs"
 }

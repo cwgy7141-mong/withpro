@@ -43,7 +43,7 @@
                         <div class="card-glow-bg"></div>
                         <div class="premium-card-badge">PREMIUM MATCHING</div>
                         <div class="premium-card-title">품격 있는 동반 라운딩<br>프라이빗 필드레슨</div>
-                        <p class="premium-card-desc">실력과 매너가 확실한 회원 프로님이 라운딩의 시작부터 홀아웃까지 실시간 밀착 레슨을 제공합니다.</p>
+                        <p class="premium-card-desc">실력과 매너가 확실한 프로님이 라운딩의 시작부터 홀아웃까지 실시간 밀착 레슨을 제공합니다.</p>
                         
                         <button class="btn btn-primary btn-premium-cta" onclick="app.navigate('view-regular')">
                             필드레슨 프로찾기 <span class="btn-arrow">🏌️‍♂️</span>
@@ -196,7 +196,7 @@
                     <div class="guide-text">
                         레슨비 외에 골프장 자체에 지불하셔야 하는 현장 비용은 개별 부담입니다.<br>
                         <strong>개인 비용:</strong> 골퍼님 본인의 그린피, 카트비, 캐디피<br>
-                        <strong>프로님 지원 비용:</strong> 함께 동반하시는 프로님의 그린피, 카트비, 캐디피는 참석하신 아마추어 회원님들이 균등하게 나누어(N분의 1) 부담해 주셔야 합니다.<br><br>
+                        <strong>프로님 지원 비용:</strong> 함께 동반하시는 프로님의 그린피, 카트비, 캐디피는 참석하신 아마추어 골퍼님들이 균등하게 나누어(N분의 1) 부담해 주셔야 합니다.<br><br>
                         <span style="color: var(--primary-color); font-weight: 600;">※ 매너 있는 골프 문화를 위해 프로님의 현장 비용을 지원해 주시는 점 양해 부탁드립니다.</span>
                     </div>
 
@@ -207,7 +207,7 @@
 
                     <div class="guide-highlight">
                         💌 골퍼님께 드리는 약속<br>
-                        저희 앱에 등록된 모든 프로님들은 100% 자격 검증을 마친 KPGA · KLPGA 회원입니다. 신원과 실력이 확실한 최고의 전문가가 골퍼님의 스코어 향상과 잊지 못할 18홀을 책임질 예정이니 기대하셔도 좋습니다!
+                        저희 앱에 등록된 모든 프로님들은 100% 자격 검증을 마친 KPGA · KLPGA 프로입니다. 신원과 실력이 확실한 최고의 전문가가 골퍼님의 스코어 향상과 잊지 못할 18홀을 책임질 예정이니 기대하셔도 좋습니다!
                     </div>
                 </div>
 
@@ -231,7 +231,7 @@
             </div>
         </div>
 
-        <!-- 프로 회원 가입 폼 -->
+        <!-- 프로 파트너 등록 폼 -->
         <div id="view-pro" class="view">
             <header class="header">
                 <button class="icon-btn" onclick="app.navigate('view-home')">
@@ -244,7 +244,7 @@
                 <div class="pro-banner mb-4">
                     <img src="logo.svg" alt="withPRO" class="tiny-logo">
                     <h3 class="banner-title">프로를 위한 특별한 혜택</h3>
-                    <p class="banner-desc">withPRO에서 당신의 전문성을 더 많은 회원들에게 알리고 성장의 기회를 잡으세요. 간단한 정보 입력만으로 프로 파트너 신청이 완료됩니다.</p>
+                    <p class="banner-desc">withPRO에서 당신의 전문성을 더 많은 골퍼들에게 알리고 성장의 기회를 잡으세요. 간단한 정보 입력만으로 프로 파트너 신청이 완료됩니다.</p>
                 </div>
 
                 <h4 class="section-title mt-4">프로필 기본 정보</h4>
@@ -298,19 +298,19 @@
                     </div>
                     <select id="pro-cert-type" class="pro-select">
                         <option value="KPGA 투어프로">KPGA 투어프로</option>
-                        <option value="KLPGA 정회원">KLPGA 정회원</option>
+                        <option value="KLPGA 정프로">KLPGA 정프로</option>
                         <option value="KPGA 프로">KPGA 프로</option>
-                        <option value="KLPGA 준회원">KLPGA 준회원</option>
+                        <option value="KLPGA 준프로">KLPGA 준프로</option>
                         <option value="기타 티칭프로">기타 티칭프로</option>
                     </select>
                 </div>
 
                 <div class="form-group mt-3">
                     <div class="label-row">
-                        <label>회원번호 (자격증 번호)</label>
+                        <label>자격 번호 (자격증 번호)</label>
                         <span class="required-badge">필수 항목</span>
                     </div>
-                    <input type="text" id="pro-cert-num" placeholder="예) 01234 (KPGA/KLPGA 회원 번호)">
+                    <input type="text" id="pro-cert-num" placeholder="예) 01234 (KPGA/KLPGA 자격 번호)">
                 </div>
 
                 <div class="form-group mt-4">
@@ -413,7 +413,7 @@
                         <div class="guide-step-card">
                             <div class="guide-step-num">Step 1</div>
                             <h4 class="guide-step-title">프로필 등록</h4>
-                            <p class="guide-step-desc">KPGA / KLPGA 회원 자격증 정보와 주 활동 지역을 입력해 주세요. 운영진의 자격 심사 승인 완료 후 즉시 활동을 시작하실 수 있습니다.</p>
+                            <p class="guide-step-desc">KPGA / KLPGA 프로 자격증 정보와 주 활동 지역을 입력해 주세요. 운영진의 자격 심사 승인 완료 후 즉시 활동을 시작하실 수 있습니다.</p>
                         </div>
                         <div class="guide-step-card">
                             <div class="guide-step-num">Step 2</div>
@@ -483,7 +483,7 @@
                             <span class="guide-reward-badge">우수 파트너 혜택</span>
                             <h4 class="guide-reward-title">우수 프로 인증 배지 부여</h4>
                         </div>
-                        <p class="guide-reward-desc">누적 라운딩 매칭 횟수와 회원 만족도 평점을 기준으로 선정합니다.</p>
+                        <p class="guide-reward-desc">누적 라운딩 매칭 횟수와 골퍼 만족도 평점을 기준으로 선정합니다.</p>
                     </div>
                 </div>
             </div>
@@ -520,7 +520,7 @@
                         <div class="toss-user-profile">
                             <div class="toss-avatar">🏌️</div>
                             <div class="toss-user-info">
-                                <span class="toss-username">아마추어 회원님</span>
+                                <span class="toss-username">아마추어 골퍼님</span>
                                 <span class="toss-phone">010-****-****</span>
                             </div>
                         </div>

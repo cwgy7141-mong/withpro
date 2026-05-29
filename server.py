@@ -25,7 +25,7 @@ DB_NAME = "withpro.db"
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    # 일반 회원 테이블
+    # 일반 골퍼 테이블
     c.execute('''
         CREATE TABLE IF NOT EXISTS regular_users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,7 +36,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    # 프로 회원 테이블
+    # 프로 파트너 테이블
     c.execute('''
         CREATE TABLE IF NOT EXISTS pro_users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,7 +154,7 @@ def dispatch_toss_notification(receiver, title, body, link=None):
         try:
             conn = sqlite3.connect(DB_NAME)
             c = conn.cursor()
-            # 일반 회원 또는 프로 회원 중 연락처가 일치하는 유저의 FCM 토큰 조회
+            # 일반 골퍼 또는 프로 파트너 중 연락처가 일치하는 유저의 FCM 토큰 조회
             c.execute("SELECT fcm_token FROM regular_users WHERE REPLACE(contact, '-', '') = ? AND fcm_token IS NOT NULL ORDER BY id DESC LIMIT 1", (clean_receiver,))
             row = c.fetchone()
             if not row:
@@ -589,12 +589,12 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 "성별": data.get('gender'),
                 "희망 지역": data.get('region')
             }
-            send_discord_notification("👤 새로운 일반 회원 가입 완료", fields)
+            send_discord_notification("👤 새로운 일반 골퍼 등록 완료", fields)
             
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'status': 'success', 'message': '일반 회원 가입이 완료되었습니다.'}).encode('utf-8'))
+            self.wfile.write(json.dumps({'status': 'success', 'message': '골퍼 등록이 완료되었습니다.'}).encode('utf-8'))
             
         elif parsed_path.path == '/api/register/pro':
             content_length = int(self.headers['Content-Length'])
@@ -613,16 +613,16 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 "이름": data.get('name', '토스 프로'),
                 "연락처": data.get('contact', '010-TOSS-PRO'),
                 "자격증 종류": data.get('cert_type', 'KPGA 투어프로'),
-                "회원 번호": data.get('cert_number'),
+                "자격 번호": data.get('cert_number'),
                 "활동 가능 요일": data.get('available_days'),
                 "활동 가능 지역": data.get('regions')
             }
-            send_discord_notification("🏌️‍♂️ 새로운 프로 회원 등록 신청", fields)
+            send_discord_notification("🏌️‍♂️ 새로운 프로 파트너 등록 신청", fields)
             
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'status': 'success', 'message': '프로 회원 가입이 완료되었습니다.'}).encode('utf-8'))
+            self.wfile.write(json.dumps({'status': 'success', 'message': '프로 파트너 신청이 완료되었습니다.'}).encode('utf-8'))
             
         elif parsed_path.path == '/api/lesson/pro-accept':
             content_length = int(self.headers['Content-Length'])
@@ -731,7 +731,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                       (data.get('user_id', 'TOSS_USER'), user_name, user_contact, data.get('golfCourse'), data.get('date'), data.get('time')))
             inserted_id = c.lastrowid
             
-            # 일반 회원 테이블에 존재하지 않는 경우 자동 등록 (일반 회원 내역 연동)
+            # 일반 골퍼 테이블에 존재하지 않는 경우 자동 등록 (골퍼 내역 연동)
             c.execute("SELECT id FROM regular_users WHERE name = ? AND contact = ?", (user_name, user_contact))
             if not c.fetchone():
                 region = data.get('golfCourse', '').split()[0] if data.get('golfCourse') else ''
@@ -949,15 +949,15 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                     fields = {
                         "프로명": row['name'] if row['name'] else "레슨 프로",
                         "연락처": row['contact'] if row['contact'] else "-",
-                        "회원번호": row['cert_number'],
+                        "자격번호": row['cert_number'],
                         "승인 상태": "승인 완료 (활동 개시 가능)"
                     }
-                    send_discord_notification("🏌️‍♂️ KPGA/KLPGA 회원 프로 파트너 심사 승인 완료", fields)
+                    send_discord_notification("🏌️‍♂️ KPGA/KLPGA 프로 파트너 심사 승인 완료", fields)
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({'status': 'success', 'message': '프로 회원 승인이 완료되었습니다.'}).encode('utf-8'))
+                self.wfile.write(json.dumps({'status': 'success', 'message': '프로 파트너 승인이 완료되었습니다.'}).encode('utf-8'))
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
@@ -1018,7 +1018,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                     # 프로 테이블에 등록된 연락처 기준으로 FCM 토큰 저장
                     c.execute("UPDATE pro_users SET fcm_token = ? WHERE REPLACE(contact, '-', '') = ?", (token, clean_contact))
                 else:
-                    # 일반 회원 테이블에 등록된 연락처 기준으로 FCM 토큰 저장
+                    # 일반 골퍼 테이블에 등록된 연락처 기준으로 FCM 토큰 저장
                     c.execute("UPDATE regular_users SET fcm_token = ? WHERE REPLACE(contact, '-', '') = ?", (token, clean_contact))
                 conn.commit()
                 conn.close()

@@ -711,14 +711,14 @@
                 </div>
                 <div class="stat-card" onclick="adminApp.switchTab('pros-tab')">
                     <div class="stat-info">
-                        <h3>🏌️‍♂️ 승인 대기 프로 회원</h3>
+                        <h3>🏌️‍♂️ 승인 대기 프로 파트너</h3>
                         <div class="stat-number" id="count-pros">0<span>명</span></div>
                     </div>
                     <div class="stat-icon accent">🏌️‍♂️</div>
                 </div>
                 <div class="stat-card" onclick="adminApp.switchTab('users-tab')">
                     <div class="stat-info">
-                        <h3>👤 가입 일반 회원</h3>
+                        <h3>👤 등록 일반 골퍼</h3>
                         <div class="stat-number" id="count-users">0<span>명</span></div>
                     </div>
                     <div class="stat-icon blue">👤</div>
@@ -732,10 +732,10 @@
                         ⛳ 레슨 매칭 신청 내역
                     </button>
                     <button class="tab-btn" onclick="adminApp.switchTab('pros-tab', this)">
-                        🏌️‍♂️ 프로 회원 내역
+                        🏌️‍♂️ 프로 파트너 내역
                     </button>
                     <button class="tab-btn" onclick="adminApp.switchTab('users-tab', this)">
-                        👤 일반 회원 내역
+                        👤 일반 골퍼 내역
                     </button>
                     <button class="tab-btn" onclick="adminApp.switchTab('firebase-tab', this)">
                         🔥 Firebase 설정
@@ -776,7 +776,7 @@
                     </table>
                 </div>
 
-                <!-- 2) 프로 회원 내역 테이블 -->
+                <!-- 2) 프로 파트너 내역 테이블 -->
                 <div id="pros-tab" class="table-section">
                     <table id="pros-table">
                         <thead>
@@ -784,7 +784,7 @@
                                 <th style="width: 60px;">번호</th>
                                 <th style="width: 100px;">이름</th>
                                 <th style="width: 130px;">연락처</th>
-                                <th style="width: 150px;">자격증/회원번호</th>
+                                <th style="width: 150px;">자격증/자격번호</th>
                                 <th>활동 가능 요일</th>
                                 <th>주요 활동 지역</th>
                                 <th style="width: 100px;">승인 상태</th>
@@ -798,7 +798,7 @@
                     </table>
                 </div>
 
-                <!-- 3) 일반 회원 내역 테이블 -->
+                <!-- 3) 일반 골퍼 내역 테이블 -->
                 <div id="users-tab" class="table-section">
                     <table id="users-table">
                         <thead>
@@ -1461,7 +1461,7 @@
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 2000);
                 } else {
-                    alert("최근 발급받은 내 토큰이 존재하지 않습니다. 먼저 일반 회원/프로 화면에 접속해 알림 허용을 해주세요.");
+                    alert("최근 발급받은 내 토큰이 존재하지 않습니다. 먼저 일반 골퍼/프로 화면에 접속해 알림 허용을 해주세요.");
                 }
             },
 
@@ -1564,7 +1564,7 @@
             renderProsTable: function(dataList) {
                 const tbody = document.querySelector('#pros-tab .table-body');
                 if (dataList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">🏌️‍♂️</span>신청된 프로 회원 내역이 없습니다.</div></td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">🏌️‍♂️</span>신청된 프로 파트너 내역이 없습니다.</div></td></tr>`;
                     return;
                 }
                 tbody.innerHTML = dataList.map((item, idx) => {
@@ -1586,7 +1586,7 @@
                             <td><strong>${this.escapeHtml(item.name || '토스 프로')}</strong></td>
                             <td>📞 ${this.escapeHtml(item.contact || '010-TOSS-PRO')}</td>
                             <td>
-                                <span class="badge-chip accent" style="margin-bottom: 4px; display: inline-block;">${this.escapeHtml(item.cert_type || '회원')}</span>
+                                <span class="badge-chip accent" style="margin-bottom: 4px; display: inline-block;">${this.escapeHtml(item.cert_type || '프로')}</span>
                                 <div style="font-size: 12.5px; font-weight: 700; color: var(--text-muted);">${this.escapeHtml(item.cert_number)}</div>
                             </td>
                             <td style="font-weight: 500;">${this.escapeHtml(item.available_days || '-')}</td>
@@ -1602,7 +1602,7 @@
             renderUsersTable: function(dataList) {
                 const tbody = document.querySelector('#users-tab .table-body');
                 if (dataList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">👤</span>가입된 일반 회원 내역이 없습니다.</div></td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">👤</span>등록된 일반 골퍼 내역이 없습니다.</div></td></tr>`;
                     return;
                 }
                 tbody.innerHTML = dataList.map((item, idx) => `
@@ -1941,7 +1941,7 @@
             },
 
             approvePro: async function(proId) {
-                if (!await window.withproConfirm("해당 프로의 KPGA/KLPGA 회원 자격을 최종 승인하시겠습니까? 완료 시 정식 파트너로 활성화됩니다.")) return;
+                if (!await window.withproConfirm("해당 프로의 KPGA/KLPGA 자격을 최종 승인하시겠습니까? 완료 시 정식 파트너로 활성화됩니다.")) return;
                 
                 try {
                     const response = await fetch('/api/admin/approve-pro', {
@@ -1960,7 +1960,7 @@
                     }
                     
                     const toast = document.getElementById('toast');
-                    toast.innerText = "✅ 프로 회원 승인 완료 및 파트너 활성화 성공!";
+                    toast.innerText = "✅ 프로 승인 완료 및 파트너 활성화 성공!";
                     toast.classList.add('show');
                     setTimeout(() => {
                         toast.classList.remove('show');
