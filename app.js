@@ -310,7 +310,34 @@ const TossBridge = {
 };
 
 const app = {
+    // 보안 강화: 본인 예약 상세 정보 및 결제창 진입 시 이름과 전화번호의 정확한 수동 대조를 강제하기 위한 메모리 전용 세션 상태
+    verifiedUserName: "",
+    verifiedUserContact: "",
+    verifiedBookings: [], // 현재 검증된 예약 신청 내역 리스트 (메모리에 보관하여 조회 성공 시에만 채워짐)
+
+    maskContact: function(contact) {
+        if (!contact) return "010-****-****";
+        const clean = contact.replace(/[^0-9]/g, "");
+        if (clean.length === 11) {
+            return `${clean.slice(0, 3)}-****-${clean.slice(7)}`;
+        } else if (clean.length === 10) {
+            return `${clean.slice(0, 3)}-***-${clean.slice(6)}`;
+        }
+        return contact;
+    },
+
     navigate: function(viewId) {
+        // 보안 검증 강제: 결제 화면 진입 시 무조건 현재 세션에 수동 검증된 예약이 있는지 확인
+        if (viewId === 'view-payment') {
+            const reqId = localStorage.getItem('withpro_last_request_id');
+            const hasVerified = app.verifiedBookings && app.verifiedBookings.some(b => b.id == reqId);
+            if (!hasVerified) {
+                alert("보안을 위해 [내 예약 확인] 메뉴에서 예약자 이름과 연락처를 먼저 정확히 입력해 주세요.");
+                app.checkMyBookings();
+                return;
+            }
+        }
+
         // 모든 뷰에서 active 클래스 제거
         document.querySelectorAll('.view').forEach(view => {
             view.classList.remove('active');
@@ -353,6 +380,15 @@ const app = {
     },
     
     init: function() {
+        // 강력한 서비스 워커 및 로컬 캐시 강제 무효화 명령 (보안 패치 갱신용)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for (let registration of registrations) {
+                    registration.update(); // 최신 정적 리소스로 강제 복구 지시
+                }
+            });
+        }
+
         // 성별 토글 버튼 이벤트 연동
         const toggleGroups = document.querySelectorAll('.toggle-group');
         toggleGroups.forEach(group => {
@@ -485,6 +521,12 @@ const app = {
             return;
         }
 
+        const consentChecked = document.getElementById('lesson-privacy-consent').checked;
+        if (!consentChecked) {
+            alert("개인정보 수집 및 이용 동의는 필수 항목입니다.");
+            return;
+        }
+
         try {
             // 서버에 레슨 요청을 보내고 토스 알림 트리거
             const response = await fetch('/api/request-lesson', {
@@ -531,6 +573,7 @@ const app = {
     registerPro: async function() {
         const name = document.getElementById('pro-name') ? document.getElementById('pro-name').value.trim() : "";
         const contact = document.getElementById('pro-contact') ? document.getElementById('pro-contact').value.trim() : "";
+        const pin = document.getElementById('pro-pin') ? document.getElementById('pro-pin').value.trim() : "";
         const cert_type = document.getElementById('pro-cert-type') ? document.getElementById('pro-cert-type').value : "KPGA 투어프로";
         const cert_number = document.getElementById('pro-cert-num') ? document.getElementById('pro-cert-num').value.trim() : "";
         const profilePreview = document.getElementById('pro-profile-preview');
@@ -560,6 +603,18 @@ const app = {
             return;
         }
 
+        if (!pin) {
+            alert("간편 비밀번호(핀번호)를 입력해 주세요.");
+            if (document.getElementById('pro-pin')) document.getElementById('pro-pin').focus();
+            return;
+        }
+
+        if (pin.length < 4 || isNaN(pin)) {
+            alert("간편 비밀번호는 4~6자리의 숫자로 입력해 주세요.");
+            if (document.getElementById('pro-pin')) document.getElementById('pro-pin').focus();
+            return;
+        }
+
         if (!cert_number) {
             alert("회원번호를 입력해 주세요.");
             if (document.getElementById('pro-cert-num')) document.getElementById('pro-cert-num').focus();
@@ -575,12 +630,18 @@ const app = {
             alert("레슨이 가능한 활동 지역을 최소 하나 이상 선택해 주세요.");
             return;
         }
-        
+
+        const consentChecked = document.getElementById('pro-privacy-consent').checked;
+        if (!consentChecked) {
+            alert("개인정보 수집 및 서비스 이용약관 동의는 필수 항목입니다.");
+            return;
+        }
+
         try {
             const response = await fetch('/api/register/pro', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, contact, cert_type, cert_number, profile_pic, available_days, regions })
+                body: JSON.stringify({ name, contact, cert_type, cert_number, profile_pic, available_days, regions, pin })
             });
             const data = await response.json();
             
@@ -637,47 +698,120 @@ const app = {
     },
 
     checkMyBookings: async function() {
-        const reqId = localStorage.getItem('withpro_last_request_id');
+        // [내 예약 확인] 클릭 시 무조건 기존 수동 조회/인증 세션을 초기화하여 캐시 자동 통과를 원천 차단
+        app.verifiedUserName = "";
+        app.verifiedUserContact = "";
+        app.verifiedBookings = [];
+
         const container = document.getElementById('my-bookings-container');
         app.navigate('view-my-bookings');
         
-        if (!reqId) {
-            container.innerHTML = `
-                <div class="matching-loading-box">
-                    <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
-                    <h3 class="overlay-title" style="margin-bottom: 8px;">최근 예약 신청 내역이 없습니다</h3>
-                    <p class="overlay-subtitle" style="margin-bottom: 24px;">지금 라운딩 일정을 등록하고 최고의 프로님을 매칭받아 보세요!</p>
-                    <button class="btn btn-primary" onclick="app.navigate('view-regular')">필드레슨 매칭 신청하기</button>
+        container.innerHTML = `
+            <div class="matching-loading-box" style="padding: 10px 0;">
+                <div style="font-size: 40px; margin-bottom: 12px;">🔍</div>
+                <h3 class="overlay-title" style="margin-bottom: 6px; font-size: 17px; font-weight: 800;">예약 신청 내역 확인</h3>
+                <p class="overlay-subtitle" style="margin-bottom: 20px; font-size: 13px;">예약 시 입력하신 이름과 연락처를 입력해 주세요.</p>
+                
+                <div class="lookup-form" style="width: 100%; text-align: left; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; box-sizing: border-box; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 13px; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 6px;">예약자 이름</label>
+                        <input type="text" id="lookup-user-name" placeholder="신청자 실명을 입력해 주세요" style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; box-sizing: border-box; font-weight: 500;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="font-size: 13px; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 6px;">예약자 연락처</label>
+                        <input type="text" id="lookup-user-contact" placeholder="연락처를 입력해 주세요 (예: 010-1234-5678)" style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; box-sizing: border-box; font-weight: 500;">
+                    </div>
+                    <button class="btn btn-primary" onclick="app.lookupMyBookings()" style="width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 8px; background-color: var(--primary-color); border: none; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(11, 54, 33, 0.1);">
+                        실시간 예약내역 조회
+                    </button>
                 </div>
-            `;
+                
+                <div style="font-size: 13px; color: var(--text-sub); font-weight: 500;">
+                    아직 예약 내역이 없으신가요? 
+                    <a href="#" onclick="event.preventDefault(); app.navigate('view-regular');" style="color: var(--primary-color); font-weight: 700; text-decoration: underline; margin-left: 4px;">신규 매칭 신청하기 →</a>
+                </div>
+            </div>
+        `;
+    },
+
+    lookupMyBookings: async function() {
+        const nameInput = document.getElementById('lookup-user-name');
+        const contactInput = document.getElementById('lookup-user-contact');
+        
+        const name = nameInput ? nameInput.value.trim() : "";
+        const contact = contactInput ? contactInput.value.trim() : "";
+        
+        if (!name) {
+            alert("예약자 이름을 입력해 주세요.");
+            if (nameInput) nameInput.focus();
             return;
         }
-
+        
+        if (!contact) {
+            alert("연락처를 입력해 주세요.");
+            if (contactInput) contactInput.focus();
+            return;
+        }
+        
+        const container = document.getElementById('my-bookings-container');
         container.innerHTML = `
             <div class="matching-loading-box">
                 <div class="toss-spinner" style="border-top-color: var(--primary-color);"></div>
-                <p class="overlay-subtitle">최신 상태를 불러오는 중입니다...</p>
+                <p class="overlay-subtitle">서버에서 예약 정보를 조회하는 중입니다...</p>
             </div>
         `;
-
+        
         try {
-            const response = await fetch(`/api/lesson/status?id=${reqId}`);
+            const response = await fetch('/api/lesson/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, contact })
+            });
+            
             if (!response.ok) {
-                throw new Error("정보를 찾을 수 없습니다.");
+                throw new Error("조회 실패");
             }
-            const data = await response.json();
-            const status = data.status || '매칭 대기중';
-
-            if (status === '매칭 대기중') {
+            
+            const list = await response.json();
+            
+            if (list.length === 0) {
                 container.innerHTML = `
                     <div class="matching-loading-box">
-                        <div class="golf-pulsing-ball">⛳</div>
-                        <h3 class="overlay-title">프로 매칭을 진행하고 있어요</h3>
-                        <p class="overlay-subtitle" style="margin-bottom: 20px;">
-                            withPRO 회원 프로님들을 대상으로<br>
-                            골퍼님의 일정과 코스에 맞는 최적의 매칭을 조율 중입니다.
-                        </p>
-                        <div class="my-booking-card" style="width: 100%; text-align: left;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                        <h3 class="overlay-title" style="margin-bottom: 8px;">조회된 예약 내역이 없습니다</h3>
+                        <p class="overlay-subtitle" style="margin-bottom: 24px;">입력하신 정보가 올바른지 확인하거나 신규 매칭을 신청해 주세요.</p>
+                        <div class="grid-2 gap-2" style="display: flex; gap: 10px; width: 100%;">
+                            <button class="btn btn-secondary" style="flex: 1; padding: 12px; border-radius: 8px; font-weight: 700; border: 1.5px solid var(--border-color); background: white;" onclick="localStorage.removeItem('withpro_last_request_id'); app.checkMyBookings();">다시 입력</button>
+                            <button class="btn btn-primary" style="flex: 1; padding: 12px; border-radius: 8px; font-weight: 700;" onclick="app.navigate('view-regular')">매칭 신청하기</button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 보안 강화: 수동 본인 확인(조회)에 성공한 이름, 연락처 및 예약 목록을 메모리 세션에 기록
+            app.verifiedUserName = name;
+            app.verifiedUserContact = contact;
+            app.verifiedBookings = list;
+
+            // 첫 번째로 조회된 예약 ID를 최근 예약 ID로 저장하여 UX 개선 (캐싱용으로 유지하되, 무조건 대조 필수)
+            localStorage.setItem('withpro_last_request_id', list[0].id);
+            
+            // 예약 내역 렌더링
+            let htmlContent = `
+                <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; text-align: left;">
+                    <div class="lookup-success-badge" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 8px; background-color: var(--active-bg); color: var(--primary-color); font-weight: 700; font-size: 13.5px; text-align: center;">
+                        ✨ 총 ${list.length}건의 실시간 필드레슨 예약을 확인했습니다!
+                    </div>
+            `;
+            
+            list.forEach(data => {
+                const status = data.status || '매칭 대기중';
+                let cardHtml = '';
+                
+                if (status === '매칭 대기중') {
+                    cardHtml = `
+                        <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; margin: 0;">
                             <div class="booking-badge-row">
                                 <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
                                 <span class="booking-status-tag wait">매칭 대기중</span>
@@ -691,27 +825,15 @@ const app = {
                                     <span class="booking-detail-label">신청자명</span>
                                     <span class="booking-detail-value">${app.escapeHtml(data.user_name || '이름 없음')}</span>
                                 </li>
-                                <li class="booking-detail-item">
-                                    <span class="booking-detail-label">연락처</span>
-                                    <span class="booking-detail-value">${app.escapeHtml(data.user_contact || '-')}</span>
-                                </li>
                             </ul>
-                            <div style="font-size: 13.5px; color: var(--text-sub); line-height: 1.5; font-weight: 500; text-align: center; background-color: #f3f4f6; padding: 12px; border-radius: 8px;">
-                                🔔 매칭이 완료되면 예약금 결제 요청 알림이 발송됩니다. 조금만 기다려 주세요!
+                            <div style="font-size: 13px; color: var(--text-sub); line-height: 1.5; font-weight: 500; text-align: center; background-color: #f3f4f6; padding: 12px; border-radius: 8px;">
+                                🔔 매칭이 완료되면 결제 요청 알림이 발송됩니다.
                             </div>
                         </div>
-                    </div>
-                `;
-            } else if (status === '프로 수락 대기중') {
-                container.innerHTML = `
-                    <div class="matching-loading-box">
-                        <div class="golf-pulsing-ball" style="animation: pulse 1.8s infinite;">🏌️‍♂️</div>
-                        <h3 class="overlay-title" style="color: var(--primary-color);">프로님께 매칭 제안이 수락 대기중입니다</h3>
-                        <p class="overlay-subtitle" style="margin-bottom: 20px;">
-                            골퍼님의 일정과 코스에 완벽하게 일치하는 최고의 프로님이 배정되어<br>
-                            현재 최종 매칭 수락 여부를 확인 중에 있습니다.
-                        </p>
-                        <div class="my-booking-card" style="width: 100%; text-align: left; border-color: #fde68a; background: linear-gradient(180deg, #fffdf8 0%, #ffffff 100%);">
+                    `;
+                } else if (status === '프로 수락 대기중') {
+                    cardHtml = `
+                        <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; border-color: #fde68a; background: linear-gradient(180deg, #fffdf8 0%, #ffffff 100%); margin: 0;">
                             <div class="booking-badge-row">
                                 <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
                                 <span class="booking-status-tag wait" style="background-color: #fffbeb; color: #b45309; border-color: #fde68a;">수락 대기중</span>
@@ -722,111 +844,107 @@ const app = {
                                     <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
                                 </li>
                                 <li class="booking-detail-item">
-                                    <span class="booking-detail-label">신청자명</span>
-                                    <span class="booking-detail-value">${app.escapeHtml(data.user_name || '이름 없음')}</span>
-                                </li>
-                                <li class="booking-detail-item">
                                     <span class="booking-detail-label">배정 프로</span>
-                                    <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 회원 프로 (수락 확인중)</span>
+                                    <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 회원 프로 (수락 대기)</span>
                                 </li>
                             </ul>
                             <div style="font-size: 13.5px; color: #b45309; line-height: 1.5; font-weight: 600; text-align: center; background-color: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
-                                🔔 프로님이 배정 제안을 수락하는 즉시 SMS로 매칭 소식 및 예약금(50,000원) 결제 링크가 자동으로 안내됩니다.
+                                🔔 프로님이 수락하는 즉시 결제 링크가 자동으로 활성화됩니다.
                             </div>
                         </div>
-                    </div>
-                `;
-            } else if (status === '매칭완료') {
-                container.innerHTML = `
-                    <div class="my-booking-card" style="margin-top: 12px;">
-                        <div class="booking-badge-row">
-                            <span class="booking-title" style="font-size: 20px;">매칭 완료! 🎉</span>
-                            <span class="booking-status-tag matched">결제 대기중</span>
-                        </div>
-                        <p style="font-size: 14.5px; color: #4B5563; line-height: 1.6; margin-bottom: 20px; font-weight: 500;">
-                            골퍼님의 일정에 딱 맞는 최고의 프로님이 매칭되었습니다! 예약을 최종 확정하기 위해 아래의 노쇼 방지 예약금을 결제해 주세요.
-                        </p>
-                        
-                        <div style="background-color: #FAFAFA; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                            <ul class="booking-details-list" style="margin: 0; border: none; padding: 0;">
-                                <li class="booking-detail-item" style="margin-bottom: 10px;">
-                                    <span class="booking-detail-label">라운딩 골프장</span>
-                                    <span class="booking-detail-value">${app.escapeHtml(data.golf_course)}</span>
-                                </li>
-                                <li class="booking-detail-item" style="margin-bottom: 10px;">
+                    `;
+                } else if (status === '매칭완료') {
+                    cardHtml = `
+                        <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; margin: 0;">
+                            <div class="booking-badge-row">
+                                <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
+                                <span class="booking-status-tag matched">결제 대기중</span>
+                            </div>
+                            <ul class="booking-details-list">
+                                <li class="booking-detail-item">
                                     <span class="booking-detail-label">라운딩 일정</span>
                                     <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
                                 </li>
-                                <li class="booking-detail-item" style="margin-bottom: 0;">
-                                    <span class="booking-detail-label">매칭 프로 자격</span>
-                                    <span class="booking-detail-value" style="color: var(--primary-color);">KPGA/KLPGA 회원 프로</span>
+                                <li class="booking-detail-item">
+                                    <span class="booking-detail-label">보증금</span>
+                                    <span class="booking-detail-value" style="color: #0064FF; font-weight: 800;">50,000원</span>
                                 </li>
                             </ul>
+                            <button class="btn btn-primary full-width animate-pulse" style="background-color: #0064FF; color: white; border: none; font-size: 15px; box-shadow: 0 4px 15px rgba(0, 100, 255, 0.15);" onclick="app.openPaymentView(${data.id})">예약금 결제하기</button>
                         </div>
-
-                        <div class="booking-price-row" style="margin-bottom: 24px;">
-                            <span style="color: #6B7280; font-size: 15px;">예약 신청 보증금</span>
-                            <span class="booking-price-value" style="font-size: 24px; font-weight: 800; color: #0064FF;">50,000원</span>
-                        </div>
-                        
-                        <button class="btn btn-primary full-width animate-pulse" style="background-color: #0064FF; color: white; border: none; font-size: 17px; box-shadow: 0 4px 15px rgba(0, 100, 255, 0.25);" onclick="app.openPaymentView()">50,000원 예약금 결제하기</button>
-                    </div>
-                `;
-            } else if (status === '결제완료') {
-                container.innerHTML = `
-                    <div class="my-booking-card" style="margin-top: 12px; border-color: #a7f3d0; background: linear-gradient(180deg, #FCFDFD 0%, #FFFFFF 100%);">
-                        <div class="booking-badge-row">
-                            <span class="booking-title" style="color: #065f46; font-size: 20px;">예약 최종 확정 ⛳</span>
-                            <span class="booking-status-tag paid">예약 완료</span>
-                        </div>
-                        <p style="font-size: 14.5px; color: #065f46; line-height: 1.6; margin-bottom: 20px; font-weight: 600; background-color: #ECFDF5; padding: 12px; border-radius: 8px; text-align: center;">
-                            🎉 예약금 결제가 정상적으로 승인되어 레슨 예약이 최종 확정되었습니다!
-                        </p>
-                        
-                        <div style="background-color: #FAFAFA; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #111827;">레슨 예약 영수증</h4>
-                            <ul class="booking-details-list" style="margin: 0; border: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
-                                <li class="booking-detail-item">
-                                    <span class="booking-detail-label">예약 골프장</span>
-                                    <span class="booking-detail-value">${app.escapeHtml(data.golf_course)}</span>
-                                </li>
+                    `;
+                } else if (status === '결제완료') {
+                    cardHtml = `
+                        <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; border-color: #a7f3d0; background: linear-gradient(180deg, #FCFDFD 0%, #FFFFFF 100%); margin: 0;">
+                            <div class="booking-badge-row">
+                                <span class="booking-title" style="color: #065f46;">${app.escapeHtml(data.golf_course)}</span>
+                                <span class="booking-status-tag paid">예약 완료</span>
+                            </div>
+                            <p style="font-size: 13.5px; color: #065f46; line-height: 1.5; margin-bottom: 12px; font-weight: 600; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center;">
+                                🎉 예약금 결제가 정상 승인되어 최종 확정되었습니다!
+                            </p>
+                            <ul class="booking-details-list">
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">라운딩 일시</span>
                                     <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
                                 </li>
                                 <li class="booking-detail-item">
-                                    <span class="booking-detail-label">결제 금액</span>
-                                    <span class="booking-detail-value">50,000원 (실시간 완납)</span>
-                                </li>
-                                <li class="booking-detail-item">
                                     <span class="booking-detail-label">결제 수단</span>
-                                    <span class="booking-detail-value">${app.escapeHtml(data.pay_method || '토스페이 (간편결제)')}</span>
+                                    <span class="booking-detail-value">${app.escapeHtml(data.pay_method || '간편결제')}</span>
                                 </li>
                             </ul>
                         </div>
-
-                        <div style="font-size: 13.5px; color: #4B5563; line-height: 1.6; padding: 14px; border-radius: 8px; background-color: #FFFBEB; border: 1px solid #FDE68A;">
-                            <strong>👨‍🏫 동반 가이드 및 안내사항:</strong><br>
-                            - 매칭된 프로님께서 티오프 시간 <strong>최소 30분 전</strong>에 골프장에 도착하여 직접 전화 및 안내 연락을 드릴 예정입니다.<br>
-                            - 코스 내에서 발생하는 <strong>프로님의 현장 비용(그린피, 카트비, 캐디피)은 아마추어 동반 회원님들이 균등 부담(N분의 1)</strong>하셔야 함을 미리 안내드립니다.<br>
-                            - 매칭 확정 건 취소 시에는 예약금 환불 규정에 따라 처리가 제한될 수 있습니다.
-                        </div>
-                    </div>
-                `;
-            }
+                    `;
+                }
+                
+                htmlContent += cardHtml;
+            });
+            
+            htmlContent += `
+                    <button class="btn btn-secondary full-width" style="margin-top: 10px; padding: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--border-color); background: white;" onclick="localStorage.removeItem('withpro_last_request_id'); app.checkMyBookings();">
+                        다른 번호로 조회하기
+                    </button>
+                </div>
+            `;
+            container.innerHTML = htmlContent;
+            
         } catch (e) {
             container.innerHTML = `
                 <div class="matching-loading-box">
                     <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-                    <h3 class="overlay-title">오류가 발생했습니다</h3>
-                    <p class="overlay-subtitle" style="margin-bottom: 20px;">예약 정보를 서버에서 불러오는 중에 실패했습니다.</p>
+                    <h3 class="overlay-title">조회 중 오류가 발생했습니다</h3>
+                    <p class="overlay-subtitle" style="margin-bottom: 20px;">서버와의 통신이 원활하지 않습니다.</p>
                     <button class="btn btn-secondary" onclick="app.checkMyBookings()">다시 시도</button>
                 </div>
             `;
         }
     },
 
-    openPaymentView: function() {
+    openPaymentView: function(bookingId) {
+        if (!bookingId) {
+            alert("예약 식별 정보가 올바르지 않습니다.");
+            app.checkMyBookings();
+            return;
+        }
+        
+        // 보안 검증: 현재 수동 인증을 거친 예약 목록 중에 이 ID가 실제로 존재하는지 대조
+        const booking = app.verifiedBookings && app.verifiedBookings.find(b => b.id == bookingId);
+        if (!booking) {
+            alert("보안을 위해 [내 예약 확인] 메뉴에서 예약자 이름과 연락처를 먼저 정확히 입력하고 예약 내역을 조회해 주세요.");
+            app.checkMyBookings();
+            return;
+        }
+        
+        // 검증 통과 시 해당 예약 ID를 기기에 임시 보관 (결제 요청용)
+        localStorage.setItem('withpro_last_request_id', bookingId);
+        
+        // 결제창 내의 사용자 실명 및 마스킹된 전화번호 바인딩 (보안 신뢰성 증대)
+        const nameEl = document.querySelector('#view-payment .toss-username');
+        if (nameEl) nameEl.innerText = `${booking.user_name} 회원님`;
+        
+        const phoneEl = document.querySelector('#view-payment .toss-phone');
+        if (phoneEl) phoneEl.innerText = app.maskContact(booking.user_contact);
+        
         app.navigate('view-payment');
         app.switchPayMethod('toss');
     },
@@ -851,64 +969,102 @@ const app = {
     },
 
     executePayment: function() {
-        // 선택한 결제 수단 상세 정보 파싱
         const method = app.selectedPayMethod || 'toss';
         let payMethodText = '토스페이 (간편결제)';
-        let loadingMessage = '토스페이 금융망을 통해 거래를 승인하고 있습니다.';
+        let pgProvider = 'html5_inicis'; // 테스트용 PG사 (KG이니시스)
+        let payMethodCode = 'card';      // 기본 수단 (신용카드)
         
         if (method === 'card') {
             const cardSelect = document.getElementById('pay-card-company');
             const cardName = cardSelect ? cardSelect.value : '신용카드';
             payMethodText = `${cardName} (신용카드)`;
-            loadingMessage = `${cardName} 카드사 안전 결제망을 통해 거래를 승인하고 있습니다.`;
+            pgProvider = 'html5_inicis';
+            payMethodCode = 'card';
         } else if (method === 'transfer') {
             const bankSelect = document.getElementById('pay-bank-name');
             const bankName = bankSelect ? bankSelect.value : '계좌이체';
             payMethodText = `${bankName} (실시간 계좌이체)`;
-            loadingMessage = `${bankName} 에스크로 결제망을 통해 안전 계좌이체를 진행하고 있습니다.`;
+            pgProvider = 'html5_inicis';
+            payMethodCode = 'trans';
+        } else if (method === 'toss') {
+            payMethodText = '토스페이 (간편결제)';
+            pgProvider = 'tosspay.tosspay'; // 토스페이 전용 테스트 PG
+            payMethodCode = 'card';
         }
         
-        // 로딩 오버레이 텍스트 동적 수정
-        const overlayTitle = document.querySelector('#payment-loading-overlay .overlay-title');
-        const overlaySubtitle = document.querySelector('#payment-loading-overlay .overlay-subtitle');
-        if (overlayTitle) overlayTitle.innerText = "안전하게 결제 처리 중...";
-        if (overlaySubtitle) overlaySubtitle.innerHTML = `${loadingMessage}<br>새로고침하거나 창을 닫지 마세요.`;
+        // 포트원 라이브러리 정상 주입 확인
+        if (typeof IMP === 'undefined') {
+            alert("결제 모듈이 아직 로드되지 않았습니다. 새로고침 후 다시 시도해 주세요.");
+            return;
+        }
         
-        // 로딩 스피너 활성화
-        document.getElementById('payment-loading-overlay').classList.add('active');
+        // 포트원 가상 가맹점 번호로 전역 초기화
+        IMP.init("imp00000000");
         
-        setTimeout(async () => {
-            const reqId = localStorage.getItem('withpro_last_request_id');
-            try {
-                const response = await fetch('/api/lesson/payment-complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: reqId, pay_method: payMethodText })
-                });
+        const reqId = localStorage.getItem('withpro_last_request_id');
+        // 결제 실행 보안 검증: 현재 수동 인증을 통과하여 세션에 있는 예약 건인지 다시 한 번 대조
+        const booking = app.verifiedBookings && app.verifiedBookings.find(b => b.id == reqId);
+        if (!booking) {
+            alert("보안을 위해 [내 예약 확인] 메뉴에서 예약자 이름과 연락처를 다시 한 번 정확히 입력해 주세요.");
+            app.checkMyBookings();
+            return;
+        }
+
+        const merchantUid = `withpro_${reqId}_${Date.now()}`;
+        
+        // 포트원 결제창 호출 및 처리 (실제 본인인증 완료된 사용자의 이름과 연락처 주입)
+        IMP.request_pay({
+            pg: pgProvider,
+            pay_method: payMethodCode,
+            merchant_uid: merchantUid,
+            name: "withPRO 필드레슨 예약 보증금",
+            amount: 50000,
+            buyer_name: booking.user_name,
+            buyer_tel: booking.user_contact,
+            m_redirect_url: window.location.origin + "/index.html?view=my-bookings" // 모바일 결제 리다이렉트 대응
+        }, async function(rsp) {
+            if (rsp.success) {
+                // 로딩 스피너 활성화
+                const loadingOverlay = document.getElementById('payment-loading-overlay');
+                if (loadingOverlay) loadingOverlay.classList.add('active');
                 
-                if (!response.ok) {
-                    throw new Error("결제 처리 API 통신 실패");
+                try {
+                    const response = await fetch('/api/lesson/payment-complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            id: reqId, 
+                            pay_method: payMethodText,
+                            imp_uid: rsp.imp_uid,
+                            merchant_uid: rsp.merchant_uid 
+                        })
+                    });
+                    
+                    if (loadingOverlay) loadingOverlay.classList.remove('active');
+                    
+                    if (!response.ok) {
+                        throw new Error("결제 처리 API 통신 실패");
+                    }
+                    
+                    // 성공 팝업 결제 수단 명시
+                    const successSubtitle = document.querySelector('#payment-success-overlay .success-subtitle');
+                    if (successSubtitle) {
+                        successSubtitle.innerHTML = `50,000원 예약금이 <strong>${app.escapeHtml(payMethodText)}</strong>으로 성공적으로 수납되었습니다.<br>필드레슨 매칭이 최종 확정되었습니다.`;
+                    }
+                    
+                    document.getElementById('payment-success-overlay').classList.add('active');
+                    
+                    // Confetti 애니메이션 기동
+                    app.launchConfetti();
+                    
+                } catch(e) {
+                    if (loadingOverlay) loadingOverlay.classList.remove('active');
+                    alert("결제 승인은 완료되었으나 상태 변경 처리에 실패했습니다. 고객센터로 문의해 주세요.");
                 }
-                
-                // 로딩 스피너 숨기기 및 성공 팝업 띄우기
-                document.getElementById('payment-loading-overlay').classList.remove('active');
-                
-                // 성공 팝업 결제 수단 명시
-                const successSubtitle = document.querySelector('#payment-success-overlay .success-subtitle');
-                if (successSubtitle) {
-                    successSubtitle.innerHTML = `50,000원 예약금이 <strong>${app.escapeHtml(payMethodText)}</strong>으로 성공적으로 수납되었습니다.<br>필드레슨 매칭이 최종 확정되었습니다.`;
-                }
-                
-                document.getElementById('payment-success-overlay').classList.add('active');
-                
-                // Confetti 애니메이션 기동
-                app.launchConfetti();
-                
-            } catch(e) {
-                document.getElementById('payment-loading-overlay').classList.remove('active');
-                alert("결제 처리에 실패했습니다. 다시 시도해 주세요.");
+            } else {
+                alert("결제가 승인되지 않았거나 취소되었습니다: " + rsp.error_msg);
             }
-        }, 1500); // 1.5초 지연
+        });
     },
 
     closeSuccessOverlay: function() {
@@ -955,66 +1111,64 @@ const app = {
             .replace(/'/g, "&#039;");
     },
 
-    promptProLogin: async function() {
-        const toast = document.getElementById('pro-toast');
-        toast.innerText = "🔒 Toss 보안 인증 연동 중...";
-        toast.classList.add('show');
+    loginPro: async function() {
+        const phoneInput = document.getElementById('login-pro-phone');
+        const pinInput = document.getElementById('login-pro-pin');
         
-        setTimeout(async () => {
-            try {
-                const autoPhone = await TossBridge.getPhoneNumber();
-                const response = await fetch(`/api/pro/login-by-phone?phone=${encodeURIComponent(autoPhone)}`);
-                if (response.status === 404) {
-                    toast.classList.remove('show');
-                    const manualPhone = prompt("토스 연동 정보가 대시보드와 매칭되지 않습니다. 가입 신청 시 입력하셨던 전화번호 전체를 수동으로 입력해 주세요:", autoPhone);
-                    if (!manualPhone) return;
-                    app.executeManualLogin(manualPhone);
-                    return;
-                }
-                
-                if (!response.ok) {
-                    throw new Error("로그인 실패");
-                }
-                
-                const data = await response.json();
-                const cert = data.cert_number;
-                if (cert) {
-                    localStorage.setItem('withpro_pro_cert', cert);
-                    toast.innerText = `✨ 토스 인증 성공: 자동 로그인 완료!`;
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                        app.openProMyPage(cert);
-                    }, 1200);
-                }
-            } catch(e) {
-                toast.classList.remove('show');
-                alert("토스 인증 서버와 통신 중 오류가 발생했습니다. 다시 시도해 주세요.");
-            }
-        }, 800);
-    },
-    
-    executeManualLogin: async function(phone) {
-        const trimmed = phone.replace(/-/g, '').trim();
-        if (!trimmed || isNaN(trimmed) || trimmed.length < 9) {
-            alert("올바른 전화번호를 입력해 주세요.");
+        const phone = phoneInput ? phoneInput.value.trim() : "";
+        const pin = pinInput ? pinInput.value.trim() : "";
+        
+        if (!phone) {
+            alert("휴대폰 번호를 입력해 주세요.");
+            if (phoneInput) phoneInput.focus();
             return;
         }
         
+        if (!pin) {
+            alert("간편 비밀번호(핀번호)를 입력해 주세요.");
+            if (pinInput) pinInput.focus();
+            return;
+        }
+        
+        const toast = document.getElementById('pro-toast');
+        if (toast) {
+            toast.innerText = "🔒 보안 로그인 중...";
+            toast.classList.add('show');
+        }
+        
         try {
-            const response = await fetch(`/api/pro/login-by-phone?phone=${encodeURIComponent(phone.trim())}`);
-            if (response.status === 404) {
-                alert("등록된 프로 정보를 찾을 수 없습니다. 다시 가입 신청해 주세요.");
+            const response = await fetch('/api/pro/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, pin })
+            });
+            
+            if (toast) toast.classList.remove('show');
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                alert(data.error || "로그인에 실패했습니다.");
                 return;
             }
-            if (!response.ok) throw new Error();
-            const data = await response.json();
+            
             const cert = data.cert_number;
             if (cert) {
                 localStorage.setItem('withpro_pro_cert', cert);
-                app.openProMyPage(cert);
+                if (toast) {
+                    toast.innerText = "✨ 로그인 성공: 마이페이지 이동!";
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        app.openProMyPage(cert);
+                    }, 800);
+                } else {
+                    app.openProMyPage(cert);
+                }
             }
         } catch(e) {
-            alert("로그인 처리 중 서버 오류가 발생했습니다.");
+            if (toast) toast.classList.remove('show');
+            alert("로그인 서버와 통신 중 오류가 발생했습니다. 다시 시도해 주세요.");
         }
     },
 
@@ -1438,10 +1592,73 @@ const app = {
         } catch(e) {
             console.log("[Firebase] 클라이언트 설정 및 토큰 등록 실패:", e);
         }
+    },
+
+    showPrivacyModal: function(type) {
+        const modal = document.getElementById('privacy-modal');
+        const titleEl = document.getElementById('privacy-title');
+        const bodyEl = document.getElementById('privacy-body');
+        
+        let title = '';
+        let content = '';
+        
+        if (type === 'privacy') {
+            title = '개인정보 수집 및 이용 동의';
+            content = `
+                <h4>1. 개인정보 수집 목적</h4>
+                <p>withPRO는 레슨 매칭 서비스 제공, 당사자 간 연락 지원, 알림 서비스(SMS, Push) 발송을 위해 개인정보를 수집합니다.</p>
+                
+                <h4>2. 수집하는 개인정보 항목</h4>
+                <p>필수 항목: 이름, 연락처(휴대폰 번호), 라운딩 골프장, 날짜 및 시간</p>
+                
+                <h4>3. 개인정보의 보유 및 이용 기간</h4>
+                <p>수집된 개인정보는 서비스 목적 달성 후 혹은 이용자 요구 시 즉시 파기됩니다. 단, 관계 법령에 따라 보존할 필요가 있는 경우 해당 기간 동안 안전하게 보관됩니다.</p>
+                
+                <h4>4. 동의 거부 권리</h4>
+                <p>귀하는 개인정보 수집 및 이용에 동의하지 않을 권리가 있습니다. 단, 동의하지 않으실 경우 필드레슨 매칭 서비스 신청이 불가능합니다.</p>
+            `;
+        } else {
+            title = '서비스 이용약관 및 개인정보 처리방침';
+            content = `
+                <h4>서비스 이용약관</h4>
+                <p><strong>제1조 (목적)</strong><br>본 약관은 withPRO가 제공하는 골프 프로 매칭 서비스의 이용 조건 및 절차에 관한 사항을 규정함을 목적으로 합니다.</p>
+                <p><strong>제2조 (레슨 매칭 및 비용)</strong><br>1. 아마추어 회원은 매칭 예약금을 결제함으로써 예약을 확정합니다.<br>2. 레슨 당일 발생하는 프로의 코스 비용(그린피, 카트비, 캐디피 등)은 아마추어 동반자들이 균등 부담(N분의 1)합니다.</p>
+                <p><strong>제3조 (환불 및 취소)</strong><br>노쇼 방지를 위한 예약 보증금(50,000원)은 원칙적으로 반환되지 않습니다.</p>
+                
+                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">
+                
+                <h4>개인정보 처리방침</h4>
+                <p><strong>1. 개인정보 수집 목적</strong><br>프로 파트너 등록 심사, 매칭 요청 알림 발송, 레슨 지원 및 긴급 연락 지원</p>
+                <p><strong>2. 수집 항목</strong><br>이름, 연락처, 자격증 종류 및 번호, 프로필 사진, 활동 가능 지역 및 요일</p>
+                <p><strong>3. 보유 및 이용 기간</strong><br>파트너 계약 종료 시 혹은 목적 달성 완료 후 즉시 파기</p>
+            `;
+        }
+        
+        titleEl.innerText = title;
+        bodyEl.innerHTML = content;
+        modal.classList.add('active');
+    },
+    
+    closePrivacyModal: function() {
+        document.getElementById('privacy-modal').classList.remove('active');
     }
 };
 
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
+});
+
+// 브라우저 뒤로가기/앞으로가기 및 BF Cache(Back-Forward Cache) 복원 시 자동 보안 검증 강제 (우회 노출 전면 차단)
+window.addEventListener('pageshow', (event) => {
+    const currentActiveView = document.querySelector('.view.active');
+    if (currentActiveView) {
+        const viewId = currentActiveView.id;
+        if (viewId === 'view-my-bookings' || viewId === 'view-payment') {
+            // 예약 상세나 결제 뷰가 활성화되어 있는데 메모리 내 검증 세션이 없다면 즉시 본인 확인 폼으로 강제 리다이렉트
+            if (!app.verifiedBookings || app.verifiedBookings.length === 0) {
+                app.checkMyBookings();
+            }
+        }
+    }
 });

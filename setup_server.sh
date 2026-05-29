@@ -21,12 +21,12 @@ sudo ufw allow 8000/tcp
 
 # 3. Nginx Reverse Proxy 설정 파일 생성
 echo "🌐 3/4. Nginx 리버스 프록시 연동 및 가상 서버 설정 중..."
-DOMAIN_NAME="yourdomain.com" # <-- 사장님의 실제 도메인 주소로 변경하여 실행하세요!
+DOMAIN_NAME="withpro.life" # <-- 사장님의 실제 도메인 주소로 변경하여 실행하세요!
 
-sudo bash -c "cat > /etc/nginx/sites-available/withpro <<EOF
+sudo tee /etc/nginx/sites-available/withpro > /dev/null <<EOF
 server {
     listen 80;
-    server_name \$DOMAIN_NAME;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
 
     location / {
         proxy_pass http://127.0.0.1:8000;
@@ -36,7 +36,7 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
-EOF"
+EOF
 
 # Nginx 설정 활성화 및 재시작
 sudo ln -sf /etc/nginx/sites-available/withpro /etc/nginx/sites-enabled/

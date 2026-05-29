@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>withPRO - 골프 프로 매칭 서비스</title>
-    <link rel="stylesheet" href="styles.css?v=8.2">
+    <link rel="stylesheet" href="styles.css?v=10.0">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -64,13 +65,17 @@
                         </button>
                     </div>
                     
-                    <div class="pro-login-premium-card">
-                        <div class="pro-login-info">
-                            <span class="pro-login-label">이미 파트너 프로이신가요?</span>
-                            <span class="pro-login-sublabel">토스인증으로 즉시 로그인하여 일정을 관리하세요.</span>
+                    <div class="pro-login-premium-card" style="flex-direction: column; align-items: stretch; gap: 14px; padding: 20px;">
+                        <div class="pro-login-info" style="margin-bottom: 4px;">
+                            <span class="pro-login-label" style="font-size: 15.5px; font-weight: 800; color: var(--text-main);">파트너 프로 로그인</span>
+                            <span class="pro-login-sublabel" style="font-size: 12.5px; color: var(--text-sub);">등록하신 휴대폰 번호와 핀번호로 로그인해 주세요.</span>
                         </div>
-                        <button class="btn-pro-login-premium" onclick="app.promptProLogin()">
-                            토스인증 로그인 ⚡
+                        <div class="login-inputs-group" style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="text" id="login-pro-phone" placeholder="휴대폰 번호 (예: 010-1234-5678)" style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; font-weight: 500; box-sizing: border-box;">
+                            <input type="password" id="login-pro-pin" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="간편 비밀번호 (핀번호 4~6자리)" style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; font-weight: 500; box-sizing: border-box;">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.loginPro()" style="width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 8px; background-color: var(--primary-color); border: none; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(11, 54, 33, 0.1);">
+                            로그인
                         </button>
                     </div>
                 </div>
@@ -221,7 +226,7 @@
                 <div class="pro-banner mb-4">
                     <img src="logo.svg" alt="withPRO" class="tiny-logo">
                     <h3 class="banner-title">프로를 위한 특별한 혜택</h3>
-                    <p class="banner-desc">withPRO에서 당신의 전문성을 더 많은 회원들에게 알리고 성장의 기회를 잡으세요. 간단한 정보 설정만으로 준비가 완료됩니다. (기본 정보는 토스에서 가져옵니다)</p>
+                    <p class="banner-desc">withPRO에서 당신의 전문성을 더 많은 회원들에게 알리고 성장의 기회를 잡으세요. 간단한 정보 입력만으로 프로 파트너 신청이 완료됩니다.</p>
                 </div>
 
                 <h4 class="section-title mt-4">프로필 기본 정보</h4>
@@ -256,6 +261,14 @@
                         <span class="required-badge">필수 항목</span>
                     </div>
                     <input type="text" id="pro-contact" placeholder="연락처를 입력해주세요 (예: 010-1234-5678)" value="">
+                </div>
+                
+                <div class="form-group mt-3">
+                    <div class="label-row">
+                        <label>간편 비밀번호 (핀번호)</label>
+                        <span class="required-badge">필수 (4~6자리 숫자)</span>
+                    </div>
+                    <input type="password" id="pro-pin" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="로그인 시 사용할 핀번호 4~6자리를 설정해 주세요" value="">
                 </div>
 
                 <h4 class="section-title mt-4">자격 및 활동 정보</h4>
@@ -332,7 +345,7 @@
                 </div>
                 <!-- 이미 등록된 프로 로그인 가이드 -->
                 <div class="pro-login-link-box mb-4">
-                    <span class="pro-login-link" onclick="app.promptProLogin()">이미 파트너 프로로 등록하셨나요? 전화번호 뒷자리로 로그인</span>
+                    <span class="pro-login-link" onclick="app.navigate('view-home'); app.switchHomeTab('pro');">이미 파트너 프로로 등록하셨나요? 간편 로그인</span>
                 </div>
             </div>
             <div class="bottom-action">
@@ -528,7 +541,7 @@
                 </div>
 
                 <div class="payment-safety-guide">
-                    🛡️ 토스 안심결제 시스템이 작동 중입니다. 고객님의 금융 정보는 고도로 암호화되어 안전하게 보호됩니다.
+                    🛡️ withPRO 안전결제 시스템이 작동 중입니다. 고객님의 금융 정보는 고도로 암호화되어 안전하게 보호됩니다.
                 </div>
             </div>
             <div class="bottom-action" style="background: linear-gradient(to top, #F3F4F6 80%, rgba(243,244,246,0));">
@@ -541,7 +554,7 @@
             <div class="payment-overlay-content">
                 <div class="toss-spinner"></div>
                 <h3 class="overlay-title">안전하게 결제 처리 중...</h3>
-                <p class="overlay-subtitle">토스페이 금융망을 통해 거래를 승인하고 있습니다.<br>새로고침하거나 창을 닫지 마세요.</p>
+                <p class="overlay-subtitle">결제 대행사 보안망을 통해 거래를 승인하고 있습니다.<br>새로고침하거나 창을 닫지 마세요.</p>
             </div>
         </div>
 
@@ -665,6 +678,6 @@
 
     <!-- 미니 슬라이딩 토스트 -->
     <div id="pro-toast" class="pro-toast">✨ 활동 정보가 저장되었습니다!</div>
-    <script src="app.js?v=8.2"></script>
+    <script src="app.js?v=10.0"></script>
 </body>
 </html>

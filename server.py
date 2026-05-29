@@ -64,6 +64,10 @@ def init_db():
         c.execute("ALTER TABLE pro_users ADD COLUMN profile_pic TEXT")
     except sqlite3.OperationalError:
         pass # Column might already exist
+    try:
+        c.execute("ALTER TABLE pro_users ADD COLUMN pin TEXT DEFAULT '1234'")
+    except sqlite3.OperationalError:
+        pass # Column might already exist
         
     # 레슨 요청 테이블
     c.execute('''
@@ -92,6 +96,14 @@ def init_db():
         pass # Column might already exist
     try:
         c.execute("ALTER TABLE lesson_requests ADD COLUMN user_contact TEXT")
+    except sqlite3.OperationalError:
+        pass # Column might already exist
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN pay_method TEXT")
+    except sqlite3.OperationalError:
+        pass # Column might already exist
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN imp_uid TEXT")
     except sqlite3.OperationalError:
         pass # Column might already exist
     try:
@@ -260,6 +272,13 @@ def send_discord_notification(title, fields):
     threading.Thread(target=send_webhook, daemon=True).start()
 
 class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        # 정적 파일 서빙 시 강력한 캐시 무효화 헤더 강제 이식 (모바일 웹뷰 및 브라우저 캐시 무력화)
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        super().end_headers()
+
     def do_GET(self):
         parsed_path = urlparse(self.path)
         if parsed_path.path == '/api/firebase-config':
@@ -584,8 +603,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             
             conn = sqlite3.connect(DB_NAME)
             c = conn.cursor()
-            c.execute("INSERT INTO pro_users (name, contact, cert_type, cert_number, profile_pic, available_days, regions) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                      (data.get('name'), data.get('contact'), data.get('cert_type'), data.get('cert_number'), data.get('profile_pic'), data.get('available_days'), data.get('regions')))
+            c.execute("INSERT INTO pro_users (name, contact, cert_type, cert_number, profile_pic, available_days, regions, pin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                      (data.get('name'), data.get('contact'), data.get('cert_type'), data.get('cert_number'), data.get('profile_pic'), data.get('available_days'), data.get('regions'), data.get('pin', '1234')))
             conn.commit()
             conn.close()
             
@@ -848,7 +867,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 conn = sqlite3.connect(DB_NAME)
                 conn.row_factory = sqlite3.Row
                 c = conn.cursor()
-                c.execute("UPDATE lesson_requests SET status = '결제완료' WHERE id = ?", (req_id,))
+                # 결제 수단 및 포트원 결제번호(imp_uid) 저장
+                c.execute("UPDATE lesson_requests SET status = '결제완료', pay_method = ?, imp_uid = ? WHERE id = ?", (data.get('pay_method'), data.get('imp_uid'), req_id))
                 c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
                 row = c.fetchone()
                 
@@ -867,6 +887,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         "라운딩 날짜": row['lesson_date'],
                         "티오프 시간": row['lesson_time'],
                         "결제 금액": "50,000원",
+                        "결제 수단": row['pay_method'] if row['pay_method'] else "간편결제",
+                        "포트원 거래번호": row['imp_uid'] if row['imp_uid'] else "시뮬레이션",
                         "매칭 상태": "결제 완료 (최종 확정)"
                     }
                     send_discord_notification("💰 필드레슨 예약금 결제 완료 (최종 확정)", fields)
@@ -1127,6 +1149,110 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({'status': 'success', 'message': f'실시간 푸시 발송 완료! Response: {response}'}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+                
+        elif parsed_path.path == '/api/pro/login':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+            phone = data.get('phone')
+            pin = data.get('pin')
+            
+            if not phone or not pin:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': '휴대폰 번호와 비밀번호(핀번호)를 입력해주세요.'}).encode('utf-8'))
+                return
+                
+            clean_phone = phone.replace('-', '').strip()
+            
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                conn.row_factory = sqlite3.Row
+                c = conn.cursor()
+                c.execute("SELECT * FROM pro_users ORDER BY id DESC")
+                rows = c.fetchall()
+                conn.close()
+                
+                matched_user = None
+                for row in rows:
+                    if row['contact']:
+                        db_contact = row['contact'].replace('-', '').strip()
+                        if db_contact == clean_phone:
+                            matched_user = row
+                            break
+                            
+                if not matched_user:
+                    self.send_response(404)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': '등록된 프로 정보를 찾을 수 없습니다. 다시 가입 신청해 주세요.'}).encode('utf-8'))
+                    return
+                    
+                # 핀 번호 검증 (기존 유저는 기본값 '1234'로 검증)
+                db_pin = matched_user['pin'] if 'pin' in matched_user.keys() and matched_user['pin'] else '1234'
+                if str(db_pin).strip() != str(pin).strip():
+                    self.send_response(401)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': '비밀번호(핀번호)가 일치하지 않습니다.'}).encode('utf-8'))
+                    return
+                    
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success', 
+                    'cert_number': matched_user['cert_number'],
+                    'message': '로그인에 성공했습니다.'
+                }).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+                
+        elif parsed_path.path == '/api/lesson/lookup':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+            name = data.get('name')
+            contact = data.get('contact')
+            
+            if not name or not contact:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': '예약자 이름과 연락처를 모두 입력해주세요.'}).encode('utf-8'))
+                return
+                
+            clean_contact = contact.replace('-', '').strip()
+            
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                conn.row_factory = sqlite3.Row
+                c = conn.cursor()
+                # 연락처와 이름이 일치하는 예약 내역 조회
+                c.execute("SELECT * FROM lesson_requests WHERE user_name = ? ORDER BY id DESC", (name.strip(),))
+                rows = c.fetchall()
+                conn.close()
+                
+                matched_requests = []
+                for row in rows:
+                    if row['user_contact']:
+                        db_contact = row['user_contact'].replace('-', '').strip()
+                        if db_contact == clean_contact:
+                            matched_requests.append(dict(row))
+                            
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(matched_requests).encode('utf-8'))
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
