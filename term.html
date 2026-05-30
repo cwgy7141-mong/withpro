@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>서비스 이용약관 - withPRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-color: #10b981;
+            --font-outfit: 'Outfit', 'Inter', 'Noto Sans KR', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-outfit);
+            line-height: 1.7;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .logo span {
+            color: var(--accent-color);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 10px;
+        }
+
+        .date {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        section {
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background-color: var(--accent-color);
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        p {
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            h2 {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">with<span>PRO</span></div>
+            <h1>서비스 이용약관</h1>
+            <p class="date">시행일자: 2026년 5월 30일</p>
+        </header>
+
+        <section>
+            <h2>제1조 (목적)</h2>
+            <p>본 약관은 위드프로(이하 '회사')가 제공하는 모바일 앱 및 웹사이트(https://withpro.life, 이하 '서비스')에서 제공하는 필드레슨 실시간 매칭 서비스의 이용 조건 및 절차, 회사와 회원 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
+        </section>
+
+        <section>
+            <h2>제2조 (용어의 정의)</h2>
+            <p>본 약관에서 사용하는 용어의 정의는 다음과 같습니다.</p>
+            <ul>
+                <li><strong>일반 회원(골퍼)</strong>: 서비스에 접속하여 레슨을 신청하고 예약금을 결제하여 프로 골퍼와 매칭 서비스를 이용하는 회원을 말합니다.</li>
+                <li><strong>프로 회원(파트너)</strong>: 공식 골프협회 자격을 검증받고 서비스에 등록되어, 일반 회원의 레슨 매칭 요청을 수락하고 레슨 용역을 제공하는 회원을 말합니다.</li>
+                <li><strong>예약 보증금 (예약금)</strong>: 레슨 예약 및 매칭을 확정하기 위해 일반 회원이 서비스를 통해 선결제하는 보증금을 말합니다.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>제3조 (이용계약의 성립 및 매칭)</h2>
+            <ul>
+                <li>서비스 이용계약은 회원이 본 약관에 동의하고 예약금을 결제하여 레슨 요청을 정상 접수하거나 프로 회원으로 가입 승인을 획득했을 때 성립합니다.</li>
+                <li>일반 회원이 예약금을 결제하고 레슨을 신청하면, 프로 회원에게 실시간 알림이 발송되며 매칭 수락 시 예약 및 매칭이 최종 확정됩니다.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>제4조 (예약금의 결제 및 예약 확정)</h2>
+            <p>일반 회원은 서비스가 제공하는 전자결제 대행(PG) 수단(신용카드, 카카오페이 등)을 통해 예약 보증금을 결제할 수 있습니다. 결제 완료 즉시 레슨 매칭 프로세스가 개시되며, 매칭이 조율 및 성사되면 예약이 최종 확정됩니다.</p>
+        </section>
+
+        <section>
+            <h2>제5조 (취소 및 환불 정책)</h2>
+            <p>회사는 소비자의 보호 및 원활한 레슨 진행 조율을 위하여 아래와 같이 공정한 환불 정책을 수립하여 적용합니다.</p>
+            <ul>
+                <li><strong>매칭 대기 단계에서의 취소</strong>: 프로 골퍼 파트너와 매칭이 최종 조율 및 확정되기 전 단계에서 예약을 취소할 경우, 납부한 예약 보증금은 **100% 전액 환불**됩니다.</li>
+                <li><strong>프로 회원(프로)의 귀책으로 인한 취소</strong>: 매칭 완료 후 프로의 일정 취소 등 프로 회원의 귀책사유로 레슨이 취소될 경우, 보증금은 **100% 전액 환불**됩니다.</li>
+                <li><strong>매칭 완료 후 일반 회원의 변심 취소</strong>: 라운딩 일정 확정 및 매칭 완료 후 일반 회원의 단순 변심 또는 개인 사정으로 취소할 경우, 예약금 반환 정책 및 당사자 조율 합의에 의거하여 일정 비율의 보증금 차감 또는 환불이 제약될 수 있습니다.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>제6조 (회사의 의무)</h2>
+            <ul>
+                <li>회사는 관련 법령과 본 약관이 금지하거나 미풍양속에 반하는 행위를 하지 않으며, 지속적이고 안정적인 서비스를 제공하기 위해 최선을 다합니다.</li>
+                <li>회사는 이용자가 안전하게 서비스를 이용할 수 있도록 개인정보 보호를 위한 보안 시스템을 구축하고 개인정보처리방침을 철저하게 준수합니다.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>제7조 (이용자의 의무)</h2>
+            <p>이용자는 신청 시 실명과 본인의 실제 휴대전화번호 등 정확한 정보를 기입해야 하며, 타인의 정보를 도용하여 가입하거나 결제 대행망을 부정하게 이용해서는 안 됩니다. 또한 예약 확정 후 프로 파트너와의 신뢰를 지켜 라운딩 일정을 성실히 이행해야 합니다.</p>
+        </section>
+
+        <section>
+            <h2>제8조 (관할 법원)</h2>
+            <p>본 약관과 관련하여 회사와 회원 간에 발생하는 분쟁에 관한 소송은 민사소송법에 따른 법원을 관할 법원으로 합니다.</p>
+        </section>
+
+        <footer>
+            <p>© withPRO. All Rights Reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
