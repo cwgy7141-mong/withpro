@@ -521,7 +521,7 @@ const app = {
                 localStorage.setItem('withpro_last_request_id', data.id);
             }
             
-            alert(data.message); // 서버에서 "토스 앱으로 알림을 보내드렸어요!" 메시지가 옴
+            alert(data.message); // 서버에서 매칭 접수 결과 메시지 수신 및 표시
             
             // Firebase FCM 알림 연동 및 토큰 저장 시도
             app.initFirebase(userContact, 'regular');
@@ -736,7 +736,7 @@ const app = {
         const container = document.getElementById('my-bookings-container');
         container.innerHTML = `
             <div class="matching-loading-box">
-                <div class="toss-spinner" style="border-top-color: var(--primary-color);"></div>
+                <div class="loading-spinner" style="border-top-color: var(--primary-color);"></div>
                 <p class="overlay-subtitle">서버에서 예약 정보를 조회하는 중입니다...</p>
             </div>
         `;
@@ -918,12 +918,7 @@ const app = {
         // 검증 통과 시 해당 예약 ID를 기기에 임시 보관 (결제 요청용)
         localStorage.setItem('withpro_last_request_id', bookingId);
         
-        // 결제창 내의 사용자 실명 및 마스킹된 전화번호 바인딩 (보안 신뢰성 증대)
-        const nameEl = document.querySelector('#view-payment .toss-username');
-        if (nameEl) nameEl.innerText = `${booking.user_name} 회원님`;
-        
-        const phoneEl = document.querySelector('#view-payment .toss-phone');
-        if (phoneEl) phoneEl.innerText = app.maskContact(booking.user_contact);
+        // 결제창 내의 사용자 정보 확인 단계로 이동
         
         app.navigate('view-payment');
         app.switchPayMethod('card');
@@ -1162,7 +1157,7 @@ const app = {
 
         statusContainer.innerHTML = `
             <div class="matching-loading-box" style="padding: 30px 0;">
-                <div class="toss-spinner" style="border-top-color: var(--primary-color); width: 36px; height: 36px;"></div>
+                <div class="loading-spinner" style="border-top-color: var(--primary-color); width: 36px; height: 36px;"></div>
                 <p class="overlay-subtitle" style="font-size: 13px;">프로 프로필을 불러오는 중...</p>
             </div>
         `;
@@ -1371,7 +1366,7 @@ const app = {
 
         container.innerHTML = `
             <div class="matching-loading-box">
-                <div class="toss-spinner" style="border-top-color: var(--primary-color);"></div>
+                <div class="loading-spinner" style="border-top-color: var(--primary-color);"></div>
                 <p class="overlay-subtitle">매칭 정보를 불러오는 중입니다...</p>
             </div>
         `;

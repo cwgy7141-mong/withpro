@@ -133,7 +133,7 @@ SMS_API_SECRET = ""         # 솔라피 이용 시에만 사용 (Secret Key)
 SMS_USER_ID = ""            # 알리고 이용 시에만 사용 (알리고 ID)
 SMS_SENDER_NUMBER = ""      # KISA에 등록된 본인의 발신 전화번호 (예: '021234567' 또는 '01012345678')
 
-def dispatch_toss_notification(receiver, title, body, link=None):
+def dispatch_push_notification(receiver, title, body, link=None):
     if not receiver:
         return
     
@@ -679,7 +679,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         customer_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={row['id']}"
-                        dispatch_toss_notification(row['user_contact'], customer_title, customer_body, customer_link)
+                        dispatch_push_notification(row['user_contact'], customer_title, customer_body, customer_link)
                 else:
                     c.execute("UPDATE lesson_requests SET status = '매칭 대기중', matched_pro_id = NULL WHERE id = ? AND matched_pro_id = ?", (req_id, pro_id))
                     
@@ -747,7 +747,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             proto = self.headers.get('X-Forwarded-Proto', 'http')
             host_header = self.headers.get('Host', 'localhost:8000')
             user_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={inserted_id}"
-            dispatch_toss_notification(data.get('userContact'), title, body, user_link)
+            dispatch_push_notification(data.get('userContact'), title, body, user_link)
             
             # 디스코드 알림 발송
             fields = {
@@ -838,7 +838,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         pro_link = f"{proto}://{host_header}/index.html?view=pro-accept&id={row['id']}&pro_id={pro_id}"
-                        dispatch_toss_notification(pro_row['contact'], pro_title, pro_body, pro_link)
+                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body, pro_link)
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -901,7 +901,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         
                         pro_title = "💰 필드레슨 매칭 최종 확정!"
                         pro_body = f"[withPRO] {pro_name} 프로님, 필드레슨 예약금이 완납되어 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
-                        dispatch_toss_notification(pro_row['contact'], pro_title, pro_body)
+                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body)
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
