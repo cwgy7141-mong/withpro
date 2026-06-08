@@ -524,31 +524,16 @@
                 </div>
 
                 <div class="payment-methods-tabs">
-                    <button class="pay-tab active" onclick="app.switchPayMethod('toss')">토스페이</button>
-                    <button class="pay-tab" onclick="app.switchPayMethod('card')">신용카드</button>
+                    <button class="pay-tab active" onclick="app.switchPayMethod('card')">신용카드</button>
                     <button class="pay-tab" onclick="app.switchPayMethod('transfer')">계좌이체</button>
                 </div>
 
                 <div class="payment-methods-content">
-                    <!-- 토스페이 상세 정보 -->
-                    <div id="pay-detail-toss" class="pay-detail-panel active">
-                        <div class="toss-benefit-box">
-                            <span class="benefit-badge">혜택</span> 토스머니 결제 시 1.5% 적립 및 소득공제
-                        </div>
-                        <div class="toss-user-profile">
-                            <div class="toss-avatar">🏌️</div>
-                            <div class="toss-user-info">
-                                <span class="toss-username">아마추어 회원님</span>
-                                <span class="toss-phone">010-****-****</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- 신용카드 상세 정보 -->
-                    <div id="pay-detail-card" class="pay-detail-panel">
+                    <div id="pay-detail-card" class="pay-detail-panel active">
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label style="font-size: 13px; font-weight: 600; color: #4B5563;">카드사 선택</label>
-                            <select class="pay-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
+                            <select class="pay-select" id="pay-card-company" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
                                 <option>신한카드</option>
                                 <option>국민카드</option>
                                 <option>삼성카드</option>
@@ -579,13 +564,13 @@
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
                             <label style="font-size: 13px; font-weight: 600; color: #4B5563;">출금 은행</label>
-                            <select class="pay-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
-                                <option>토스뱅크</option>
+                            <select class="pay-select" id="pay-bank-name" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #D1D5DB; background-color: white; font-size: 15px; font-weight: 500;">
                                 <option>신한은행</option>
                                 <option>국민은행</option>
                                 <option>카카오뱅크</option>
                                 <option>우리은행</option>
                                 <option>농협은행</option>
+                                <option>하나은행</option>
                             </select>
                         </div>
                     </div>

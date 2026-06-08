@@ -288,26 +288,6 @@
     };
 })();
 
-const TossBridge = {
-    // 토스 앱 내부 웹뷰 환경에서 전화번호를 안전하게 가져오는 가상 SDK 브릿지
-    getPhoneNumber: async function() {
-        const cached = localStorage.getItem('withpro_toss_user_phone');
-        if (cached) return cached;
-        
-        try {
-            const response = await fetch('/api/pro/latest-phone');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.phone) {
-                    localStorage.setItem('withpro_toss_user_phone', data.phone);
-                    return data.phone;
-                }
-            }
-        } catch(e) {}
-        
-        return "010-1234-5678";
-    }
-};
 
 const app = {
     // 보안 강화: 본인 예약 상세 정보 및 결제창 진입 시 이름과 전화번호의 정확한 수동 대조를 강제하기 위한 메모리 전용 세션 상태
@@ -528,7 +508,7 @@ const app = {
         }
 
         try {
-            // 서버에 레슨 요청을 보내고 토스 알림 트리거
+            // 서버에 레슨 요청을 보내고 앱 푸시 알림 트리거
             const response = await fetch('/api/request-lesson', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -946,7 +926,7 @@ const app = {
         if (phoneEl) phoneEl.innerText = app.maskContact(booking.user_contact);
         
         app.navigate('view-payment');
-        app.switchPayMethod('toss');
+        app.switchPayMethod('card');
     },
 
     switchPayMethod: function(method) {
@@ -956,21 +936,18 @@ const app = {
         document.querySelectorAll('.pay-tab').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.pay-detail-panel').forEach(panel => panel.classList.remove('active'));
         
-        if (method === 'toss') {
+        if (method === 'card') {
             document.querySelector('.payment-methods-tabs button:nth-child(1)').classList.add('active');
-            document.getElementById('pay-detail-toss').classList.add('active');
-        } else if (method === 'card') {
-            document.querySelector('.payment-methods-tabs button:nth-child(2)').classList.add('active');
             document.getElementById('pay-detail-card').classList.add('active');
         } else if (method === 'transfer') {
-            document.querySelector('.payment-methods-tabs button:nth-child(3)').classList.add('active');
+            document.querySelector('.payment-methods-tabs button:nth-child(2)').classList.add('active');
             document.getElementById('pay-detail-transfer').classList.add('active');
         }
     },
 
     executePayment: function() {
-        const method = app.selectedPayMethod || 'toss';
-        let payMethodText = '토스페이 (간편결제)';
+        const method = app.selectedPayMethod || 'card';
+        let payMethodText = '신용카드';
         let pgProvider = 'html5_inicis'; // 테스트용 PG사 (KG이니시스)
         let payMethodCode = 'card';      // 기본 수단 (신용카드)
         
@@ -986,10 +963,6 @@ const app = {
             payMethodText = `${bankName} (실시간 계좌이체)`;
             pgProvider = 'html5_inicis';
             payMethodCode = 'trans';
-        } else if (method === 'toss') {
-            payMethodText = '토스페이 (간편결제)';
-            pgProvider = 'tosspay.tosspay'; // 토스페이 전용 테스트 PG
-            payMethodCode = 'card';
         }
         
         // 포트원 라이브러리 정상 주입 확인

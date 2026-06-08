@@ -147,7 +147,7 @@ def dispatch_toss_notification(receiver, title, body, link=None):
     }
     if link:
         fields["이동 링크"] = link
-    send_discord_notification(f"📱 [Toss B2B Push] {title}", fields)
+    send_discord_notification(f"📱 [withPRO App Push] {title}", fields)
     
     # 1. 24시간 실시간 FCM 진짜 앱 푸시 전송 (Firebase Admin SDK 연동 상태 시)
     if FIREBASE_INIT:
@@ -182,10 +182,10 @@ def dispatch_toss_notification(receiver, title, body, link=None):
         except Exception as e:
             print(f"[Firebase FCM] 푸시 알림 전송 실패: {e}", flush=True)
             
-    # 가상 토스 PUSH API 연동 콘솔 시뮬레이션 출력
+    # 가상 앱 PUSH API 연동 콘솔 시뮬레이션 출력
     print(f"\n==================================================", flush=True)
-    print(f"🔵 [Toss App B2B Push API 호출]", flush=True)
-    print(f"수신 대상: {clean_receiver} (토스 인증 유저)", flush=True)
+    print(f"🔵 [withPRO App Push API 호출]", flush=True)
+    print(f"수신 대상: {clean_receiver} (앱 인증 유저)", flush=True)
     print(f"알림 타이틀: {title}", flush=True)
     print(f"알림 바디: {body}", flush=True)
     if link:
@@ -610,8 +610,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             
             # 디스코드 알림 발송
             fields = {
-                "이름": data.get('name', '토스 프로'),
-                "연락처": data.get('contact', '010-TOSS-PRO'),
+                "이름": data.get('name', '프로'),
+                "연락처": data.get('contact', '010-0000-0000'),
                 "자격증 종류": data.get('cert_type', 'KPGA 투어프로'),
                 "회원 번호": data.get('cert_number'),
                 "활동 가능 요일": data.get('available_days'),
@@ -672,7 +672,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         }
                         send_discord_notification("🏌️‍♂️ 필드레슨 프로 매칭 수락 완료 & 결제 대기", fields)
                         
-                        # 아마추어 고객 토스 PUSH 발송
+                        # 아마추어 고객 앱 PUSH 발송
                         pro_contact = pro_row['contact'] if pro_row else "-"
                         customer_title = "🎉 필드레슨 프로 매칭 성공!"
                         customer_body = f"[withPRO] '{row['golf_course']}' 필드레슨 프로 매칭이 성공적으로 완료되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n예약을 최종 확정하시려면 아래 예약금 결제(50,000원)를 완료해 주세요."
@@ -728,7 +728,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             
             # 레슨 매칭 신청 정보 저장
             c.execute("INSERT INTO lesson_requests (user_id, user_name, user_contact, golf_course, lesson_date, lesson_time) VALUES (?, ?, ?, ?, ?, ?)",
-                      (data.get('user_id', 'TOSS_USER'), user_name, user_contact, data.get('golfCourse'), data.get('date'), data.get('time')))
+                      (data.get('user_id', 'APP_USER'), user_name, user_contact, data.get('golfCourse'), data.get('date'), data.get('time')))
             inserted_id = c.lastrowid
             
             # 일반 회원 테이블에 존재하지 않는 경우 자동 등록 (일반 회원 내역 연동)
@@ -741,9 +741,9 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             conn.commit()
             conn.close()
             
-            # 토스 알림톡 발송
+            # 앱 푸시 알림 발송
             title = "⛳ 필드레슨 매칭 요청 접수 완료"
-            body = f"[withPRO] {data.get('userName', '아마추어')}님, '{data.get('golfCourse')}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 토스로 다시 알려드리겠습니다."
+            body = f"[withPRO] {data.get('userName', '아마추어')}님, '{data.get('golfCourse')}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 앱 푸시 알림으로 다시 알려드리겠습니다."
             proto = self.headers.get('X-Forwarded-Proto', 'http')
             host_header = self.headers.get('Host', 'localhost:8000')
             user_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={inserted_id}"
@@ -756,14 +756,14 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 "골프장": data.get('golfCourse'),
                 "라운딩 날짜": data.get('date'),
                 "티오프 시간": data.get('time'),
-                "매칭 대상 ID": data.get('user_id', 'TOSS_USER')
+                "매칭 대상 ID": data.get('user_id', 'APP_USER')
             }
             send_discord_notification("⛳ 새로운 필드레슨 매칭 신청 접수", fields)
             
             # 1일(86400초) 뒤에 매칭 실패 알림 전송 (시뮬레이션)
             def send_fail_notification():
                 print(f"\n==================================================")
-                print(f"[토스 PUSH API 호출 - 매칭 실패] 대상: {data.get('userName', '아마추어')}님 ({data.get('userContact', '010-0000-0000')})")
+                print(f"[withPRO PUSH API 호출 - 매칭 실패] 대상: {data.get('userName', '아마추어')}님 ({data.get('userContact', '010-0000-0000')})")
                 print(f"메시지: '현재 매칭가능한 프로님이 안계십니다'")
                 print(f"==================================================\n")
             
@@ -778,7 +778,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             self.wfile.write(json.dumps({
                 'status': 'success', 
                 'id': inserted_id,
-                'message': '⛳ 필드레슨 매칭 신청이 성공적으로 접수되었습니다!\n\nwithPRO를 믿고 소중한 라운딩 정보를 등록해 주셔서 진심으로 감사드립니다.\n\n골퍼님의 일정과 지역에 꼭 맞는 최고의 KPGA/KLPGA 프로님을 매칭하기 위해 최선을 다하고 있습니다. 매칭이 성사되는 대로 토스 앱 알림을 통해 가장 먼저 기쁜 소식을 전해 드리겠습니다.\n\n오늘도 기분 좋은 하루 보내시고, 설레는 마음으로 라운딩을 준비해 보세요. 감사합니다!'
+                'message': '⛳ 필드레슨 매칭 신청이 성공적으로 접수되었습니다!\n\nwithPRO를 믿고 소중한 라운딩 정보를 등록해 주셔서 진심으로 감사드립니다.\n\n골퍼님의 일정과 지역에 꼭 맞는 최고의 KPGA/KLPGA 프로님을 매칭하기 위해 최선을 다하고 있습니다. 매칭이 성사되는 대로 앱 푸시 알림을 통해 가장 먼저 기쁜 소식을 전해 드리겠습니다.\n\n오늘도 기분 좋은 하루 보내시고, 설레는 마음으로 라운딩을 준비해 보세요. 감사합니다!'
             }).encode('utf-8'))
 
         elif parsed_path.path == '/api/admin/match':
@@ -831,7 +831,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                     }
                     send_discord_notification("🏌️‍♂️ 필드레슨 프로 배정 완료 (프로 수락 대기중)", fields)
                     
-                    # 프로에게 매칭 제안 토스 PUSH 전송
+                    # 프로에게 매칭 제안 앱 PUSH 전송
                     if pro_row and pro_row['contact']:
                         pro_title = "🏌️‍♂️ 새로운 필드레슨 배정 제안"
                         pro_body = f"[withPRO] {pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요."
@@ -893,7 +893,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                     }
                     send_discord_notification("💰 필드레슨 예약금 결제 완료 (최종 확정)", fields)
                     
-                    # 프로에게 매칭 최종 확정 안내 (신청인 이름 & 연락처 포함) 토스 PUSH 전송
+                    # 프로에게 매칭 최종 확정 안내 (신청인 이름 & 연락처 포함) 앱 PUSH 전송
                     if pro_row and pro_row['contact']:
                         pro_name = pro_row['name'] if pro_row['name'] else "프로"
                         customer_name = row['user_name'] if row['user_name'] else "아마추어 고객"
