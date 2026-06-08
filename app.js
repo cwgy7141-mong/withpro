@@ -999,7 +999,7 @@ const app = {
         }
         
         // 포트원 가상 가맹점 번호로 전역 초기화
-        IMP.init("imp00000000");
+        IMP.init("imp30206856");
         
         const reqId = localStorage.getItem('withpro_last_request_id');
         // 결제 실행 보안 검증: 현재 수동 인증을 통과하여 세션에 있는 예약 건인지 다시 한 번 대조
