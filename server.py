@@ -158,6 +158,7 @@ KAKAO_TPL_MATCH_PROPOSAL = "UI_6119"    # 프로에게 매칭 제안 알림 (예
 KAKAO_TPL_MATCH_SUCCESS = "UI_6120"     # 매칭 성공/결제 대기 알림 (예: "tpl_match_success")
 KAKAO_TPL_MATCH_CONFIRMED = "UI_6121"   # 결제 완료/매칭 최종 확정 알림 (예: "tpl_match_confirm")
 KAKAO_TPL_PRO_COMMISSION_DUE = "UI_xxxx" # 프로 수수료 미납 및 정지 안내 알림 (알리고 등록 필요, 예: "UI_xxxx")
+KAKAO_TPL_PRO_PAYMENT_REQUEST = "UI_yyyy" # 프로 수수료 납부 독촉 알림 (알리고 등록 필요, 예: "UI_yyyy")
 
 def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
     if not SMS_API_KEY or not SMS_USER_ID or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
@@ -345,6 +346,8 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
             tpl_code = KAKAO_TPL_MATCH_CONFIRMED
         elif template_type == "pro_commission_due":
             tpl_code = KAKAO_TPL_PRO_COMMISSION_DUE
+        elif template_type == "pro_payment_request":
+            tpl_code = KAKAO_TPL_PRO_PAYMENT_REQUEST
             
         # 템플릿 코드가 설정되어 있는 경우 알림톡 전송 시도
         if tpl_code:
@@ -465,14 +468,14 @@ def check_pro_commissions():
             c = conn.cursor()
 
             # Find lesson requests where status is '결제완료' (finalized match by amateur)
-            # and the lesson_date is past (less than today_str)
+            # and the lesson_date is today or past (less than or equal to today_str)
             # and pro has not paid commission yet (pro_pay_status != '결제완료')
             c.execute("""
                 SELECT lr.*, pu.name as pro_name, pu.contact as pro_contact, pu.status as pro_status
                 FROM lesson_requests lr
                 JOIN pro_users pu ON lr.matched_pro_id = pu.id
                 WHERE lr.status = '결제완료'
-                  AND lr.lesson_date < ?
+                  AND lr.lesson_date <= ?
                   AND (lr.pro_pay_status IS NULL OR lr.pro_pay_status != '결제완료')
             """, (today_str,))
             unpaid_lessons = c.fetchall()
@@ -484,25 +487,36 @@ def check_pro_commissions():
                 pro_name = row['pro_name']
                 golf_course = row['golf_course']
                 lesson_date = row['lesson_date']
+                pro_notified = row['pro_notified'] if row['pro_notified'] is not None else 0
 
-                # 1. Update pro status to '정지' in DB if not already suspended
-                if row['pro_status'] != '정지':
-                    c.execute("UPDATE pro_users SET status = '정지' WHERE id = ?", (pro_id,))
-                    # Send a discord notification about the suspension
-                    send_discord_notification("🚨 파트너 프로 활동 정지 (수수료 미납)", {
-                        "프로명": pro_name,
-                        "연락처": pro_contact,
-                        "미납 라운딩": f"{golf_course} ({lesson_date})",
-                        "사유": "라운딩 다음 날 수수료(5만원) 미납으로 인한 정지"
-                    })
+                # A. 라운딩 당일 -> 결제 안내 (pro_notified가 0인 미알림 상태일 때)
+                if lesson_date == today_str:
+                    if pro_notified == 0:
+                        title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
+                        body = f"[withPRO] {pro_name} 프로님, 오늘 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 다음날인 내일까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 마이페이지에서 결제를 진행해 주세요."
+                        pro_link = "https://withpro.life/index.html?view=pro-mypage"
+                        dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_payment_request")
+                        c.execute("UPDATE lesson_requests SET pro_notified = 1 WHERE id = ?", (req_id,))
 
-                # 2. Check if we already sent the push notification for this request
-                if not row['pro_notified']:
-                    title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
-                    body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 다음날인 오늘까지 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 되지 않으면 파트너 프로로서 정지(활동 정지 및 매칭 배정 불가) 상태가 유지됩니다. 마이페이지에서 결제를 완료하시면 즉시 정지가 해제됩니다."
-                    pro_link = "https://withpro.life/index.html?view=pro-mypage"
-                    dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
-                    c.execute("UPDATE lesson_requests SET pro_notified = 1 WHERE id = ?", (req_id,))
+                # B. 라운딩 다음날 이후 -> 미납 정지 처리 및 안내 (최종 정지 알림 단계인 2 미만일 때)
+                elif lesson_date < today_str:
+                    if pro_notified < 2:
+                        # 1. 프로 상태 '정지'로 변경
+                        if row['pro_status'] != '정지':
+                            c.execute("UPDATE pro_users SET status = '정지' WHERE id = ?", (pro_id,))
+                            send_discord_notification("🚨 파트너 프로 활동 정지 (수수료 미납)", {
+                                "프로명": pro_name,
+                                "연락처": pro_contact,
+                                "미납 라운딩": f"{golf_course} ({lesson_date})",
+                                "사유": "라운딩 다음 날 수수료(5만원) 미납으로 인한 정지"
+                            })
+
+                        # 2. 미납 정지 알림 발송
+                        title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
+                        body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 다음날인 오늘까지 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 되지 않으면 파트너 프로로서 정지(활동 정지 및 매칭 배정 불가) 상태가 유지됩니다. 마이페이지에서 결제를 완료하시면 즉시 정지가 해제됩니다."
+                        pro_link = "https://withpro.life/index.html?view=pro-mypage"
+                        dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
+                        c.execute("UPDATE lesson_requests SET pro_notified = 2 WHERE id = ?", (req_id,))
 
             conn.commit()
             conn.close()
