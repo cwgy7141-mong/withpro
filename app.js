@@ -487,7 +487,11 @@ const app = {
                 app.navigate('view-home');
             }
         } else if (viewParam === 'my-bookings' || (reqIdParam && !viewParam)) {
-            app.checkMyBookings();
+            if (reqIdParam) {
+                app.loadBookingDirectly(reqIdParam);
+            } else {
+                app.checkMyBookings();
+            }
         }
     },
     
@@ -692,6 +696,154 @@ const app = {
         
         display.innerText = `${ampm} ${String(hour).padStart(2, '0')}:${min}`;
         display.classList.remove('placeholder');
+    },
+
+    loadBookingDirectly: async function(reqId) {
+        const container = document.getElementById('my-bookings-container');
+        app.navigate('view-my-bookings');
+        
+        container.innerHTML = `
+            <div class="matching-loading-box">
+                <div class="loading-spinner" style="border-top-color: var(--primary-color);"></div>
+                <p class="overlay-subtitle">예약 정보를 불러오는 중입니다...</p>
+            </div>
+        `;
+        
+        try {
+            const response = await fetch(`/api/lesson/status?id=${encodeURIComponent(reqId)}`);
+            if (!response.ok) {
+                throw new Error("조회 실패");
+            }
+            
+            const data = await response.json();
+            if (!data || data.error) {
+                throw new Error(data.error || "예약을 찾을 수 없습니다.");
+            }
+            
+            // 본인 확인 인증 세션 설정
+            app.verifiedUserName = data.user_name || "고객";
+            app.verifiedUserContact = data.user_contact || "";
+            app.verifiedBookings = [data];
+            
+            localStorage.setItem('withpro_last_request_id', data.id);
+            
+            // 예약 내역 단건 렌더링
+            const status = data.status || '매칭 대기중';
+            let cardHtml = '';
+            
+            if (status === '매칭 대기중') {
+                cardHtml = `
+                    <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; margin: 0;">
+                        <div class="booking-badge-row">
+                            <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
+                            <span class="booking-status-tag wait">매칭 대기중</span>
+                        </div>
+                        <ul class="booking-details-list">
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">라운딩 일시</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
+                            </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">신청자명</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.user_name || '이름 없음')}</span>
+                            </li>
+                        </ul>
+                        <div style="font-size: 13px; color: var(--text-sub); line-height: 1.5; font-weight: 500; text-align: center; background-color: #f3f4f6; padding: 12px; border-radius: 8px;">
+                            🔔 매칭이 완료되면 결제 요청 알림이 발송됩니다.
+                        </div>
+                    </div>
+                `;
+            } else if (status === '프로 수락 대기중') {
+                cardHtml = `
+                    <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; border-color: #fde68a; background: linear-gradient(180deg, #fffdf8 0%, #ffffff 100%); margin: 0;">
+                        <div class="booking-badge-row">
+                            <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
+                            <span class="booking-status-tag wait" style="background-color: #fffbeb; color: #b45309; border-color: #fde68a;">수락 대기중</span>
+                        </div>
+                        <ul class="booking-details-list">
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">라운딩 일시</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
+                            </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">배정 프로</span>
+                                <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 회원 프로 (수락 대기)</span>
+                            </li>
+                        </ul>
+                        <div style="font-size: 13.5px; color: #b45309; line-height: 1.5; font-weight: 600; text-align: center; background-color: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
+                            🔔 프로님이 수락하는 즉시 결제 링크가 자동으로 활성화됩니다.
+                        </div>
+                    </div>
+                `;
+            } else if (status === '매칭완료') {
+                cardHtml = `
+                    <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; margin: 0;">
+                        <div class="booking-badge-row">
+                            <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
+                            <span class="booking-status-tag matched">결제 대기중</span>
+                        </div>
+                        <ul class="booking-details-list">
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">라운딩 일정</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
+                            </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">보증금</span>
+                                <span class="booking-detail-value" style="color: #0064FF; font-weight: 800;">50,000원</span>
+                            </li>
+                        </ul>
+                        <button class="btn btn-primary full-width animate-pulse" style="background-color: #0064FF; color: white; border: none; font-size: 15px; box-shadow: 0 4px 15px rgba(0, 100, 255, 0.15);" onclick="app.openPaymentView(${data.id})">예약금 결제하기</button>
+                    </div>
+                `;
+            } else if (status === '결제완료') {
+                cardHtml = `
+                    <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; border-color: #a7f3d0; background: linear-gradient(180deg, #FCFDFD 0%, #FFFFFF 100%); margin: 0;">
+                        <div class="booking-badge-row">
+                            <span class="booking-title" style="color: #065f46;">${app.escapeHtml(data.golf_course)}</span>
+                            <span class="booking-status-tag paid">예약 완료</span>
+                        </div>
+                        <p style="font-size: 13.5px; color: #065f46; line-height: 1.5; margin-bottom: 12px; font-weight: 600; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center;">
+                            🎉 예약금 결제가 정상 승인되어 최종 확정되었습니다!
+                        </p>
+                        <ul class="booking-details-list">
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">라운딩 일시</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
+                            </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">결제 수단</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.pay_method || '간편결제')}</span>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            let htmlContent = `
+                <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; text-align: left;">
+                    ${cardHtml}
+                    <button class="btn btn-secondary full-width" style="margin-top: 10px; padding: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--border-color); background: white;" onclick="localStorage.removeItem('withpro_last_request_id'); app.checkMyBookings();">
+                        다른 번호로 조회하기
+                    </button>
+                </div>
+            `;
+            container.innerHTML = htmlContent;
+
+            // 추가 개선: 만약 상태가 '매칭완료'이고 결제 버튼이 존재하는 상황이라면 바로 결제창을 띄워주는 UX 제공
+            if (status === '매칭완료') {
+                app.openPaymentView(data.id);
+            }
+            
+        } catch (e) {
+            container.innerHTML = `
+                <div class="matching-loading-box">
+                    <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                    <h3 class="overlay-title">조회 중 오류가 발생했습니다</h3>
+                    <p class="overlay-subtitle" style="margin-bottom: 20px;">서버와의 통신이 원활하지 않거나 예약 정보를 찾을 수 없습니다.</p>
+                    <button class="btn btn-secondary" onclick="app.checkMyBookings()">일반 조회로 이동</button>
+                </div>
+            `;
+        }
     },
 
     checkMyBookings: async function() {
