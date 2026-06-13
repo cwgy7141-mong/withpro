@@ -1265,13 +1265,42 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 conn.row_factory = sqlite3.Row
                 c = conn.cursor()
                 
-                # 후기 저장 및 쿠폰 '사용가능' 발급
-                c.execute("""
-                    UPDATE lesson_requests 
-                    SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime'),
-                        issued_coupon_code = 'WITHPRO30', issued_coupon_status = '사용가능'
-                    WHERE id = ?
-                """, (review_text, review_rating, req_id))
+                c.execute("SELECT user_contact FROM lesson_requests WHERE id = ?", (req_id,))
+                curr = c.fetchone()
+                
+                coupon_already_issued = False
+                user_contact_clean = ""
+                
+                def clean_phone(phone_str):
+                    return "".join([ch for ch in phone_str if ch.isdigit()])
+                    
+                if curr and curr['user_contact']:
+                    user_contact_clean = clean_phone(curr['user_contact'])
+                    
+                    c.execute("SELECT user_contact FROM lesson_requests WHERE issued_coupon_code = 'WITHPRO30'")
+                    all_issued_rows = c.fetchall()
+                    for r in all_issued_rows:
+                        if r['user_contact'] and clean_phone(r['user_contact']) == user_contact_clean:
+                            coupon_already_issued = True
+                            break
+                
+                if coupon_already_issued:
+                    c.execute("""
+                        UPDATE lesson_requests 
+                        SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime')
+                        WHERE id = ?
+                    """, (review_text, review_rating, req_id))
+                    msg = "후기가 성공적으로 등록되었습니다. (쿠폰은 계정당 1회만 발급되므로 추가 발급되지 않았습니다.)"
+                    issued_code = None
+                else:
+                    c.execute("""
+                        UPDATE lesson_requests 
+                        SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime'),
+                            issued_coupon_code = 'WITHPRO30', issued_coupon_status = '사용가능'
+                        WHERE id = ?
+                    """, (review_text, review_rating, req_id))
+                    msg = "후기가 성공적으로 등록되었습니다. 3만원 할인 쿠폰(WITHPRO30)이 발급되었습니다."
+                    issued_code = "WITHPRO30"
                 
                 c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
                 row = c.fetchone()
@@ -1284,7 +1313,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         "고객명": row['user_name'] if row['user_name'] else "아마추어",
                         "골프장": row['golf_course'],
                         "평점": f"{'★' * review_rating}{'☆' * (5 - review_rating)} ({review_rating}점)",
-                        "후기 내용": review_text
+                        "후기 내용": review_text,
+                        "쿠폰 발급 여부": "발급 완료 (최초)" if not coupon_already_issued else "미발급 (이미 발급 이력 존재)"
                     })
                 
                 self.send_response(200)
@@ -1292,8 +1322,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     'status': 'success',
-                    'message': '후기가 성공적으로 등록되었습니다. 3만원 할인 쿠폰(WITHPRO30)이 발급되었습니다.',
-                    'coupon_code': 'WITHPRO30'
+                    'message': msg,
+                    'coupon_code': issued_code
                 }).encode('utf-8'))
             except Exception as e:
                 self.send_response(500)

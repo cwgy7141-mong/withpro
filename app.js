@@ -2024,6 +2024,19 @@ const app = {
         if (data.review_text) {
             const rating = data.review_rating || 5;
             const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+            
+            const couponBadgeHtml = data.issued_coupon_code ? `
+                <div style="background-color: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 10px; text-align: center;">
+                    <span style="font-size: 11px; font-weight: 700; color: #047857; display: block; margin-bottom: 4px; text-transform: uppercase;">🎁 오픈 이벤트 쿠폰 발급 완료</span>
+                    <strong style="font-size: 16px; color: #065f46; letter-spacing: 0.5px;">${app.escapeHtml(data.issued_coupon_code)}</strong>
+                    <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 4px;">(결제창의 쿠폰 등록란에 위 코드를 입력하면 30,000원이 자동 할인됩니다)</div>
+                </div>
+            ` : `
+                <div style="background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
+                    <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">ℹ️ 오픈 이벤트 쿠폰은 최초 1회만 발급되므로 추가 발급되지 않았습니다.</span>
+                </div>
+            `;
+
             return `
                 <div style="margin-top: 15px; padding: 15px; border-radius: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0;">
                     <div style="font-size: 13.5px; font-weight: 700; color: #166534; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
@@ -2035,11 +2048,7 @@ const app = {
                     <div style="font-size: 13px; color: #374151; font-weight: 500; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; background-color: white; padding: 10px; border-radius: 6px; border: 1px solid rgba(22, 101, 52, 0.08);">
                         ${app.escapeHtml(data.review_text)}
                     </div>
-                    <div style="background-color: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 10px; text-align: center;">
-                        <span style="font-size: 11px; font-weight: 700; color: #047857; display: block; margin-bottom: 4px; text-transform: uppercase;">🎁 다음 이용 시 사용 가능한 쿠폰</span>
-                        <strong style="font-size: 16px; color: #065f46; letter-spacing: 0.5px;">WITHPRO30</strong>
-                        <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 4px;">(결제창의 쿠폰 등록란에 위 코드를 입력하면 30,000원이 자동 할인됩니다)</div>
-                    </div>
+                    ${couponBadgeHtml}
                 </div>
             `;
         }
@@ -2113,8 +2122,11 @@ const app = {
                 alert(`오류: ${resData.error || '후기 등록 실패'}`);
                 return;
             }
-            
-            alert("소중한 후기가 등록되었습니다! 3만원 할인 쿠폰이 발급되었습니다.");
+            if (resData.coupon_code) {
+                alert("소중한 후기가 등록되었습니다! 오픈 이벤트 3만원 할인 쿠폰이 발급되었습니다.");
+            } else {
+                alert(resData.message || "소중한 후기가 등록되었습니다!");
+            }
             
             const reqIdParam = new URLSearchParams(window.location.search).get('id');
             if (reqIdParam && reqIdParam == bookingId) {
