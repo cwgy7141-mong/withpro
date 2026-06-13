@@ -157,6 +157,7 @@ KAKAO_TPL_LESSON_REQUESTED = "UI_6115"  # 레슨 신청 완료 알림 (예: "tpl
 KAKAO_TPL_MATCH_PROPOSAL = "UI_6119"    # 프로에게 매칭 제안 알림 (예: "tpl_match_prop")
 KAKAO_TPL_MATCH_SUCCESS = "UI_6120"     # 매칭 성공/결제 대기 알림 (예: "tpl_match_success")
 KAKAO_TPL_MATCH_CONFIRMED = "UI_6121"   # 결제 완료/매칭 최종 확정 알림 (예: "tpl_match_confirm")
+KAKAO_TPL_PRO_COMMISSION_DUE = "UI_xxxx" # 프로 수수료 미납 및 정지 안내 알림 (알리고 등록 필요, 예: "UI_xxxx")
 
 def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
     if not SMS_API_KEY or not SMS_USER_ID or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
@@ -342,6 +343,8 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
             tpl_code = KAKAO_TPL_MATCH_SUCCESS
         elif template_type == "match_confirmed":
             tpl_code = KAKAO_TPL_MATCH_CONFIRMED
+        elif template_type == "pro_commission_due":
+            tpl_code = KAKAO_TPL_PRO_COMMISSION_DUE
             
         # 템플릿 코드가 설정되어 있는 경우 알림톡 전송 시도
         if tpl_code:
@@ -497,7 +500,7 @@ def check_pro_commissions():
                 if not row['pro_notified']:
                     title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
                     body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 다음날인 오늘까지 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 되지 않으면 파트너 프로로서 정지(활동 정지 및 매칭 배정 불가) 상태가 유지됩니다. 마이페이지에서 결제를 완료하시면 즉시 정지가 해제됩니다."
-                    pro_link = "http://localhost:8000/index.html?view=pro-mypage"
+                    pro_link = "https://withpro.life/index.html?view=pro-mypage"
                     dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
                     c.execute("UPDATE lesson_requests SET pro_notified = 1 WHERE id = ?", (req_id,))
 
