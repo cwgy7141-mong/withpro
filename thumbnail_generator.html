@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>withPRO 썸네일 생성기 (1932x828px)</title>
+    <!-- Gmarket Sans & Pretendard fonts for beautiful typography -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0b3621; /* forest green */
+            --accent: #00c775;  /* mint brand green */
+            --dark-bg: #0d1117;
+            --card-bg: #161b22;
+            --text-main: #f0f6fc;
+            --text-sub: #8b949e;
+            --border: #30363d;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: #0b3621;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-badge {
+            background-color: rgba(0, 199, 117, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(0, 199, 117, 0.3);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 99px;
+            letter-spacing: 0.5px;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 65px);
+            overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+                height: auto;
+                overflow: visible;
+            }
+        }
+
+        /* Canvas Workspace Area */
+        .workspace {
+            flex: 1.4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #0d1015;
+            padding: 40px;
+            position: relative;
+            overflow: auto;
+        }
+
+        .canvas-container {
+            background-color: #000;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #30363d;
+            position: relative;
+            max-width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        /* Scale down the 1932x828 canvas using CSS to fit perfectly */
+        #thumbnailCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-width: 900px;
+            aspect-ratio: 1932 / 828;
+            background-color: #000;
+        }
+
+        .workspace-info {
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--text-sub);
+            display: flex;
+            gap: 16px;
+        }
+
+        /* Controls Panel */
+        .control-panel {
+            flex: 1;
+            background-color: var(--card-bg);
+            border-left: 1px solid var(--border);
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .control-panel {
+                border-left: none;
+                border-top: 1px solid var(--border);
+                height: auto;
+                overflow: visible;
+            }
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input[type="text"] {
+            flex: 1;
+        }
+
+        input[type="text"], select {
+            background-color: #0d1117;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px 14px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        /* Styled Sliders */
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #21262d;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 199, 117, 0.4);
+        }
+
+        .range-val {
+            font-size: 12px;
+            color: var(--text-sub);
+            width: 35px;
+            text-align: right;
+            font-weight: 700;
+        }
+
+        /* Color Circle Picker */
+        .color-picker-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        .color-dot.active {
+            border-color: #fff;
+            transform: scale(1.15);
+        }
+
+        /* Preset Background Selection Buttons */
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .preset-btn {
+            background-color: #0d1117;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.25s;
+        }
+
+        .preset-btn.active {
+            background-color: rgba(0, 199, 117, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .preset-btn:hover:not(.active) {
+            border-color: var(--text-sub);
+        }
+
+        /* Primary Action Buttons */
+        .btn-download {
+            background: linear-gradient(135deg, #00c775 0%, #00a65c 100%);
+            color: #021a0f;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 199, 117, 0.2);
+            margin-top: 10px;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 199, 117, 0.35);
+        }
+
+        .btn-download:active {
+            transform: translateY(0);
+        }
+
+        /* Upload button styling */
+        .btn-file-upload {
+            background-color: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .btn-file-upload:hover {
+            border-color: var(--text-sub);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-logo">
+            <span style="font-size: 24px;">🏌️‍♂️</span>
+            <div>
+                <h1>withPRO Thumbnail Builder</h1>
+                <p style="font-size: 10px; color: var(--text-sub); margin-top: 2px;">Premium Banner Creator</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <span class="header-badge">1932 × 828 px</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Live Preview Canvas Area -->
+        <div class="workspace">
+            <div class="canvas-container">
+                <canvas id="thumbnailCanvas" width="1932" height="828"></canvas>
+            </div>
+            <div class="workspace-info">
+                <span>📐 해상도: 1932 x 828px</span>
+                <span>💡 브라우저 실시간 드로잉 (무손실 PNG 저장)</span>
+            </div>
+        </div>
+
+        <!-- Customization Controllers Panel -->
+        <div class="control-panel">
+            
+            <!-- 1. Background Config -->
+            <div>
+                <h3 class="section-title">1. 배경 이미지 설정</h3>
+                <div class="control-group">
+                    <label>배경 스타일 프리셋</label>
+                    <div class="presets-grid">
+                        <button class="preset-btn active" onclick="setPresetBg('black')">Pure Black</button>
+                        <button class="preset-btn" onclick="setPresetBg('gradient')">Deep Forest Green</button>
+                        <button class="preset-btn" onclick="setPresetBg('golf')">Scenic Golf Field</button>
+                        <button class="preset-btn" onclick="triggerBgUpload()">사용자 이미지 업로드</button>
+                    </div>
+                    <input type="file" id="bg-file-input" accept="image/*" style="display: none;" onchange="handleBgUpload(event)">
+                </div>
+
+                <div class="control-group">
+                    <label>배경 어둡기 (오버레이 밝기)</label>
+                    <div class="range-container">
+                        <input type="range" id="overlayOpacity" min="0" max="100" value="40" oninput="updateVal('overlayOpacity'); drawThumbnail();">
+                        <span class="range-val" id="overlayOpacity-val">40%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. logo Config -->
+            <div>
+                <h3 class="section-title">2. withPRO 브랜드 로고</h3>
+                <div class="presets-grid">
+                    <div class="control-group">
+                        <label>로고 크기 (스케일)</label>
+                        <div class="range-container">
+                            <input type="range" id="logoScale" min="50" max="150" value="100" oninput="updateVal('logoScale'); drawThumbnail();">
+                            <span class="range-val" id="logoScale-val">1.0</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>로고 세로 위치 (Y)</label>
+                        <div class="range-container">
+                            <input type="range" id="logoY" min="50" max="400" value="230" oninput="updateVal('logoY'); drawThumbnail();">
+                            <span class="range-val" id="logoY-val">230px</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>PRO 글자 색상</label>
+                    <div class="color-picker-row">
+                        <div class="color-dot active" style="background-color: #4CAF50;" onclick="selectLogoColor('#4CAF50', this)"></div>
+                        <div class="color-dot" style="background-color: #00c775;" onclick="selectLogoColor('#00c775', this)"></div>
+                        <div class="color-dot" style="background-color: #ffffff;" onclick="selectLogoColor('#ffffff', this)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Title Config -->
+            <div>
+                <h3 class="section-title">3. 메인 타이틀</h3>
+                <div class="control-group">
+                    <label>텍스트 내용</label>
+                    <input type="text" id="titleText" value="골프필드레슨" placeholder="예) 골프필드레슨" oninput="drawThumbnail()">
+                </div>
+                <div class="presets-grid">
+                    <div class="control-group">
+                        <label>글자 크기 (px)</label>
+                        <div class="range-container">
+                            <input type="range" id="titleSize" min="50" max="150" value="90" oninput="updateVal('titleSize'); drawThumbnail();">
+                            <span class="range-val" id="titleSize-val">90px</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>세로 위치 (Y)</label>
+                        <div class="range-container">
+                            <input type="range" id="titleY" min="300" max="700" value="480" oninput="updateVal('titleY'); drawThumbnail();">
+                            <span class="range-val" id="titleY-val">480px</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>우측 강조 데코 점 (Dot)</label>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <input type="checkbox" id="showDot" checked onchange="drawThumbnail()" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span style="font-size: 13px;">타이틀 뒤에 브랜드 컬러 포인트 점 그리기</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Subtitle Config -->
+            <div>
+                <h3 class="section-title">4. 서브 타이틀</h3>
+                <div class="control-group">
+                    <label>텍스트 내용</label>
+                    <input type="text" id="subtitleText" value="" placeholder="서브 슬로건 문구 (입력 시 활성화)" oninput="drawThumbnail()">
+                </div>
+                <div class="presets-grid">
+                    <div class="control-group">
+                        <label>글자 크기 (px)</label>
+                        <div class="range-container">
+                            <input type="range" id="subtitleSize" min="20" max="60" value="36" oninput="updateVal('subtitleSize'); drawThumbnail();">
+                            <span class="range-val" id="subtitleSize-val">36px</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>세로 위치 (Y)</label>
+                        <div class="range-container">
+                            <input type="range" id="subtitleY" min="500" max="800" value="620" oninput="updateVal('subtitleY'); drawThumbnail();">
+                            <span class="range-val" id="subtitleY-val">620px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Flanking Lines Config -->
+            <div>
+                <h3 class="section-title">5. 중간 데코 레이아웃</h3>
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+                    <input type="checkbox" id="showLines" checked onchange="drawThumbnail()" style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 13px; font-weight: 700;">중간 텍스트 양옆 데코 라인 활성화</span>
+                </div>
+                <div class="control-group">
+                    <label>중간 텍스트</label>
+                    <input type="text" id="badgeText" value="PREMIUM MATCHING SERVICE" placeholder="중앙 소제목" oninput="drawThumbnail()">
+                </div>
+            </div>
+
+            <!-- Download Button -->
+            <div>
+                <button class="btn-download" onclick="downloadPNG()">
+                    <span style="font-size: 18px;">💾</span>
+                    고해상도 썸네일 다운로드 (PNG)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('thumbnailCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // State variables
+        let bgStyle = 'black'; // 'black', 'gradient', 'golf', 'custom'
+        let customBgImage = null;
+        let golfBgImage = new Image();
+        golfBgImage.src = 'golf_course_bg_clean.png';
+        golfBgImage.onload = () => {
+            if (bgStyle === 'golf') drawThumbnail();
+        };
+
+        let proColor = '#4CAF50';
+
+        // Load custom background
+        function triggerBgUpload() {
+            document.getElementById('bg-file-input').click();
+        }
+
+        function handleBgUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    customBgImage = img;
+                    bgStyle = 'custom';
+                    updatePresetActive(3); // custom index
+                    drawThumbnail();
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function updatePresetActive(idx) {
+            const btns = document.querySelectorAll('.preset-btn');
+            btns.forEach((btn, i) => {
+                if (i === idx) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+
+        function setPresetBg(style) {
+            bgStyle = style;
+            if (style === 'black') updatePresetActive(0);
+            if (style === 'gradient') updatePresetActive(1);
+            if (style === 'golf') updatePresetActive(2);
+            drawThumbnail();
+        }
+
+        function selectLogoColor(color, element) {
+            proColor = color;
+            document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            drawThumbnail();
+        }
+
+        function updateVal(id) {
+            const range = document.getElementById(id);
+            const valSpan = document.getElementById(id + '-val');
+            if (id === 'logoScale') {
+                valSpan.textContent = (range.value / 100).toFixed(1);
+            } else {
+                valSpan.textContent = range.value + (id.endsWith('Opacity') ? '%' : 'px');
+            }
+        }
+
+        // Main Draw Function
+        function drawThumbnail() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Background
+            if (bgStyle === 'black') {
+                ctx.fillStyle = '#050505'; // Rich deep black
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else if (bgStyle === 'gradient') {
+                const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 50, canvas.width/2, canvas.height/2, canvas.width*0.7);
+                grad.addColorStop(0, '#0e2d1d'); // Sleek forest green accent
+                grad.addColorStop(1, '#050505'); // Fades to premium black
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else if (bgStyle === 'golf' && golfBgImage.complete) {
+                drawScaledBg(golfBgImage);
+            } else if (bgStyle === 'custom' && customBgImage) {
+                drawScaledBg(customBgImage);
+            } else {
+                // Fallback while loading
+                ctx.fillStyle = '#050505';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Draw Dark Overlay
+            const overlayPct = document.getElementById('overlayOpacity').value / 100;
+            if (overlayPct > 0) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${overlayPct})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 2. Draw Logo
+            const scale = document.getElementById('logoScale').value / 100;
+            const logoY = parseInt(document.getElementById('logoY').value);
+            
+            ctx.save();
+            ctx.translate(canvas.width / 2, logoY);
+            ctx.scale(scale, scale);
+
+            // Measure logo dimensions
+            ctx.font = "800 100px 'Inter', 'Pretendard', sans-serif";
+            const withWidth = ctx.measureText("with").width;
+            ctx.font = "800 100px 'Inter', 'Pretendard', sans-serif";
+            const proWidth = ctx.measureText("PRO").width;
+            const totalLogoWidth = withWidth + 12 + proWidth;
+
+            // Draw 'with' (White)
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.font = "800 100px 'Inter', 'Pretendard', sans-serif";
+            ctx.fillText("with", -totalLogoWidth / 2, 0);
+
+            // Draw 'PRO' (Green / selected color)
+            ctx.fillStyle = proColor;
+            ctx.fillText("PRO", (-totalLogoWidth / 2) + withWidth + 12, 0);
+
+            // Draw White Arc over 'PRO'
+            const proX = (-totalLogoWidth / 2) + withWidth + 12;
+            const arcCenterX = proX + proWidth / 2;
+            const arcCenterY = -25;
+            const arcRadiusX = proWidth / 2 + 10;
+            const arcRadiusY = 22;
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            // Draw smooth arc over PRO
+            ctx.ellipse(arcCenterX, arcCenterY, arcRadiusX, arcRadiusY, 0, Math.PI * 1.08, Math.PI * 1.92, false);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // 3. Draw Flanking Lines & Central Badge
+            const showLines = document.getElementById('showLines').checked;
+            const badgeText = document.getElementById('badgeText').value.trim();
+            if (showLines && badgeText) {
+                ctx.font = "700 22px 'Inter', 'Pretendard', sans-serif";
+                ctx.fillStyle = '#9aa49e';
+                ctx.textAlign = 'center';
+                const badgeWidth = ctx.measureText(badgeText).width;
+                const lineY = 410 + 12;
+
+                ctx.fillText(badgeText, canvas.width / 2, 410);
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.lineWidth = 2;
+                
+                // Left Line
+                ctx.beginPath();
+                ctx.moveTo(canvas.width / 2 - badgeWidth / 2 - 120, lineY);
+                ctx.lineTo(canvas.width / 2 - badgeWidth / 2 - 20, lineY);
+                ctx.stroke();
+
+                // Right Line
+                ctx.beginPath();
+                ctx.moveTo(canvas.width / 2 + badgeWidth / 2 + 20, lineY);
+                ctx.lineTo(canvas.width / 2 + badgeWidth / 2 + 120, lineY);
+                ctx.stroke();
+            }
+
+            // 4. Draw Main Title
+            const titleText = document.getElementById('titleText').value.trim();
+            const titleSize = parseInt(document.getElementById('titleSize').value);
+            const titleY = parseInt(document.getElementById('titleY').value);
+            const showDot = document.getElementById('showDot').checked;
+
+            if (titleText) {
+                ctx.font = `900 ${titleSize}px 'Pretendard', 'Noto Sans KR', sans-serif`;
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(titleText, canvas.width / 2, titleY);
+
+                // Draw emphasis Brand Green Dot
+                if (showDot) {
+                    const titleWidth = ctx.measureText(titleText).width;
+                    const dotX = canvas.width / 2 + titleWidth / 2 + 15;
+                    const dotY = titleY + titleSize * 0.15; // lower alignment
+                    const dotRadius = titleSize * 0.07;
+                    
+                    ctx.fillStyle = proColor;
+                    ctx.beginPath();
+                    ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // 5. Draw Subtitle
+            const subtitleText = document.getElementById('subtitleText').value.trim();
+            const subtitleSize = parseInt(document.getElementById('subtitleSize').value);
+            const subtitleY = parseInt(document.getElementById('subtitleY').value);
+
+            if (subtitleText) {
+                ctx.font = `600 ${subtitleSize}px 'Pretendard', 'Noto Sans KR', sans-serif`;
+                ctx.fillStyle = '#8b949e';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(subtitleText, canvas.width / 2, subtitleY);
+            }
+        }
+
+        // Draw scaled and centered image
+        function drawScaledBg(img) {
+            const targetRatio = canvas.width / canvas.height;
+            const imgRatio = img.width / img.height;
+            let drawWidth, drawHeight, xOffset, yOffset;
+
+            if (imgRatio > targetRatio) {
+                // Image is wider than canvas
+                drawHeight = canvas.height;
+                drawWidth = img.width * (canvas.height / img.height);
+                xOffset = (canvas.width - drawWidth) / 2;
+                yOffset = 0;
+            } else {
+                // Image is taller than canvas
+                drawWidth = canvas.width;
+                drawHeight = img.height * (canvas.width / img.width);
+                xOffset = 0;
+                yOffset = (canvas.height - drawHeight) / 2;
+            }
+
+            ctx.drawImage(img, xOffset, yOffset, drawWidth, drawHeight);
+        }
+
+        // Download canvas as high-res PNG
+        function downloadPNG() {
+            // Force redrawing in case font loaded later
+            drawThumbnail();
+            
+            const link = document.createElement('a');
+            link.download = 'withpro_thumbnail_1932x828.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Initialization
+        window.addEventListener('load', () => {
+            // Add some wait to allow Pretendard/Inter/Noto webfonts to load
+            setTimeout(() => {
+                drawThumbnail();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

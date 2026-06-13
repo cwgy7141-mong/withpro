@@ -1239,6 +1239,48 @@ const app = {
                     }
                 });
 
+            } else if (profile.status === '정지') {
+                statusContainer.innerHTML = `
+                    <div class="status-card error" style="display: flex; align-items: center; gap: 20px; background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); border-color: #FCA5A5; padding: 20px; border-radius: var(--radius-lg); border-style: solid; border-width: 1px;">
+                        ${hasProfilePic ? `
+                        <div class="profile-pic-display" style="width: 76px; height: 76px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; flex-shrink: 0;">
+                            <img src="${profile.profile_pic}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>` : ''}
+                        <div class="profile-info-display" style="flex: 1;">
+                            <div style="font-size: 18px; font-weight: 800; color: #991b1b; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+                                <span>${app.escapeHtml(profile.name)} 프로 (활동 정지 🚨)</span>
+                                ${excellentBadgeHtml}
+                            </div>
+                            <div style="font-size: 13px; color: #b91c1c; font-weight: 600; margin-bottom: 6px;">
+                                자격번호: ${app.escapeHtml(profile.cert_number)}
+                            </div>
+                            <div style="font-size: 12.5px; color: #991b1b; font-weight: 500; line-height: 1.4;">
+                                🚨 라운딩 다음 날 수수료 미납으로 인해 파트너 활동이 정지되었습니다. 미납된 수수료 결제를 완료하시면 즉시 정지가 해제됩니다.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('pro-settings-section').style.display = 'block';
+
+                // 2. 활동 가능 요일 버튼 체크 상태 바인딩
+                const activeDays = profile.available_days ? profile.available_days.split(',').map(s => s.trim()) : [];
+                document.querySelectorAll('#pro-mypage-days .day-btn').forEach(btn => {
+                    if (activeDays.includes(btn.innerText)) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                // 3. 활동 가능 지역 버튼 체크 상태 바인딩
+                const activeRegions = profile.regions ? profile.regions.split(',').map(s => s.trim()) : [];
+                document.querySelectorAll('#pro-mypage-regions .grid-btn-simple').forEach(btn => {
+                    if (activeRegions.includes(btn.innerText)) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
             } else {
                 statusContainer.innerHTML = `
                     <div class="status-card wait" style="display: flex; align-items: center; gap: 20px; background: linear-gradient(135deg, #FFFDF5 0%, #FFF9E6 100%); border-color: #FDE68A; padding: 20px; border-radius: var(--radius-lg);">
@@ -1272,12 +1314,34 @@ const app = {
                     </div>
                 `;
             } else {
+                const todayStr = app.getKstTodayStr();
                 matchesContainer.innerHTML = matches.map(match => {
                     let statusBadge = '';
+                    let actionButtonHtml = '';
                     if (match.status === '매칭완료') {
                         statusBadge = `<span class="pro-match-status-badge wait">결제 대기중</span>`;
                     } else if (match.status === '결제완료') {
                         statusBadge = `<span class="pro-match-status-badge paid">예약 완료 💰</span>`;
+                        
+                        if (match.lesson_date < todayStr) {
+                            if (match.pro_pay_status === '결제완료') {
+                                statusBadge += `<span class="pro-match-status-badge paid" style="margin-left: 4px; background-color: #d1fae5; color: #065f46;">수수료 납부완료 ✅</span>`;
+                            } else {
+                                statusBadge += `<span class="pro-match-status-badge wait" style="margin-left: 4px; background-color: #fee2e2; color: #991b1b;">수수료 미납 🚨</span>`;
+                                actionButtonHtml = `
+                                    <div style="margin-top: 12px; padding: 12px; background-color: #fff5f5; border: 1px solid #fee2e2; border-radius: 8px;">
+                                        <p style="font-size: 12px; color: #b91c1c; font-weight: 700; margin: 0 0 8px 0; line-height: 1.4;">
+                                            ⚠️ 라운딩 완료 다음 날 수수료 50,000원 입금이 완료되지 않으면 파트너 프로 활동이 정지됩니다.
+                                        </p>
+                                        <button class="btn btn-primary full-width" style="padding: 10px; font-size: 13px; background-color: #dc2626; border: none; font-weight: 700; width: 100%; box-sizing: border-box;" onclick="app.payProCommission(${match.id}, '${match.user_name || '골퍼'}')">
+                                            수수료 50,000원 결제하기
+                                        </button>
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            statusBadge += `<span class="pro-match-status-badge wait" style="margin-left: 4px; background-color: #f3f4f6; color: #4b5563;">수수료 납부대기 ⏳</span>`;
+                        }
                     }
                     return `
                         <div class="pro-match-card">
@@ -1299,6 +1363,7 @@ const app = {
                                     <span class="pro-match-detail-value">${app.escapeHtml(match.lesson_time)}</span>
                                 </li>
                             </ul>
+                            ${actionButtonHtml}
                         </div>
                     `;
                 }).join('');
@@ -1312,6 +1377,76 @@ const app = {
                 </div>
             `;
         }
+    },
+
+    getKstTodayStr: function() {
+        const d = new Date();
+        const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+        const kst = new Date(utc + (9 * 60 * 60 * 1000));
+        const yyyy = kst.getFullYear();
+        let mm = kst.getMonth() + 1;
+        let dd = kst.getDate();
+        if (mm < 10) mm = '0' + mm;
+        if (dd < 10) dd = '0' + dd;
+        return `${yyyy}-${mm}-${dd}`;
+    },
+
+    payProCommission: async function(reqId, amateurName) {
+        if (typeof IMP === 'undefined') {
+            alert("결제 모듈이 아직 로드되지 않았습니다. 새로고침 후 다시 시도해 주세요.");
+            return;
+        }
+        
+        // Initialize IMP
+        IMP.init("imp30206856");
+        
+        const cert = localStorage.getItem('withpro_pro_cert');
+        if (!cert) {
+            alert("프로 로그인 정보가 만료되었습니다. 다시 로그인 해 주세요.");
+            return;
+        }
+        
+        if (!await window.withproConfirm(`필드레슨 수수료 50,000원을 결제하시겠습니까?\n결제가 완료되면 파트너 프로 정지 상태가 즉시 해제됩니다.`)) {
+            return;
+        }
+        
+        const merchantUid = `withpro_pro_${reqId}_${Date.now()}`;
+        
+        IMP.request_pay({
+            pg: 'html5_inicis',
+            pay_method: 'card',
+            merchant_uid: merchantUid,
+            name: `withPRO 프로 라운딩 수수료 (${amateurName}님 매칭 건)`,
+            amount: 50000,
+            m_redirect_url: window.location.origin + "/index.html?view=pro-mypage"
+        }, async function(rsp) {
+            if (rsp.success) {
+                try {
+                    const response = await fetch('/api/pro/payment-complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            id: reqId, 
+                            pay_method: '신용카드',
+                            imp_uid: rsp.imp_uid,
+                            merchant_uid: rsp.merchant_uid,
+                            cert: cert
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error("결제 처리 API 통신 실패");
+                    }
+                    
+                    alert("수수료 결제가 성공적으로 완료되었습니다! 파트너 정지 상태가 해제되었습니다.");
+                    app.openProMyPage(cert);
+                } catch(e) {
+                    alert("결제 승인은 완료되었으나 상태 변경 처리에 실패했습니다. 고객센터로 문의해 주세요.");
+                }
+            } else {
+                alert(`결제에 실패하였습니다. 에러 내용: ${rsp.error_msg}`);
+            }
+        });
     },
 
     updateProProfile: async function() {

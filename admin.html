@@ -1540,6 +1540,25 @@
                     } else if (status === '결제완료') {
                         statusBadge = `<span class="badge-chip" style="background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 800;">결제 완료</span>`;
                         actionHtml = `<span style="color: #059669; font-size: 12.5px; font-weight: 700;">최종 예약 확정</span>`;
+                        
+                        // KST today string calculation
+                        const d = new Date();
+                        const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+                        const kst = new Date(utc + (9 * 60 * 60 * 1000));
+                        const yyyy = kst.getFullYear();
+                        let mm = kst.getMonth() + 1;
+                        let dd = kst.getDate();
+                        if (mm < 10) mm = '0' + mm;
+                        if (dd < 10) dd = '0' + dd;
+                        const todayStr = `${yyyy}-${mm}-${dd}`;
+                        
+                        if (item.pro_pay_status === '결제완료') {
+                            statusBadge += `<div style="font-size: 11.5px; color: #059669; font-weight: 800; margin-top: 5px; background-color: #ecfdf5; border: 1px solid #a7f3d0; padding: 3px 6px; border-radius: 4px; display: block; width: fit-content;">수수료: 납부완료 ✅</div>`;
+                        } else if (item.lesson_date < todayStr) {
+                            statusBadge += `<div style="font-size: 11.5px; color: #b91c1c; font-weight: 800; margin-top: 5px; background-color: #fef2f2; border: 1px solid #fca5a5; padding: 3px 6px; border-radius: 4px; display: block; width: fit-content;">수수료: 미납 🚨</div>`;
+                        } else {
+                            statusBadge += `<div style="font-size: 11.5px; color: #4b5563; font-weight: 600; margin-top: 5px; background-color: #f3f4f6; border: 1px solid #d1d5db; padding: 3px 6px; border-radius: 4px; display: block; width: fit-content;">수수료: 납부대기 ⏳</div>`;
+                        }
                     }
 
                     return `
@@ -1578,6 +1597,9 @@
                     } else if (status === '승인완료') {
                         statusBadge = `<span class="badge-chip" style="background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 800;">승인 완료</span>`;
                         actionHtml = `<span style="color: #059669; font-size: 11.5px; font-weight: 700;">정식 파트너</span>`;
+                    } else if (status === '정지') {
+                        statusBadge = `<span class="badge-chip" style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-size: 11px; font-weight: 800;">활동 정지 🚨</span>`;
+                        actionHtml = `<button class="action-btn-sm" style="background-color: var(--primary-color); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; transition: var(--transition);" onclick="adminApp.approvePro(${item.id})">정지 해제 (승인)</button>`;
                     }
 
                     return `
@@ -1941,7 +1963,12 @@
             },
 
             approvePro: async function(proId) {
-                if (!await window.withproConfirm("해당 프로의 KPGA/KLPGA 회원 자격을 최종 승인하시겠습니까? 완료 시 정식 파트너로 활성화됩니다.")) return;
+                const pro = this.cachedData.pro_users.find(p => p.id === proId);
+                let confirmMsg = "해당 프로의 KPGA/KLPGA 회원 자격을 최종 승인하시겠습니까? 완료 시 정식 파트너로 활성화됩니다.";
+                if (pro && pro.status === '정지') {
+                    confirmMsg = "해당 프로의 정지 상태를 해제하고 파트너로 다시 활성화하시겠습니까?";
+                }
+                if (!await window.withproConfirm(confirmMsg)) return;
                 
                 try {
                     const response = await fetch('/api/admin/approve-pro', {

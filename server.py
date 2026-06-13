@@ -114,6 +114,22 @@ def init_db():
         c.execute("ALTER TABLE pro_users ADD COLUMN fcm_token TEXT")
     except sqlite3.OperationalError:
         pass # Column might already exist
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN pro_pay_status TEXT DEFAULT '미납'")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN pro_pay_method TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN pro_imp_uid TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN pro_notified INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
         
     conn.commit()
     conn.close()
@@ -122,18 +138,147 @@ def init_db():
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1506978226092638208/hgh7I430irA_S4jy2AG9VCHDc44mKxTlsA-p2GBjM1y7o02qfyTcA_MsnBYh6RyqmTWA"
 
 # ==========================================
-# 📱 실제 SMS 발송 연동 설정 (알리고 / 솔라피)
+# 📱 실제 SMS 및 카카오 알림톡 발송 연동 설정
 # ==========================================
-# 실제 휴대폰 문자로 안내를 전송받으시려면 아래 설정을 채워주세요.
+# 실제 카카오 알림톡(실패 시 대체 문자 발송)을 전송받으시려면 아래 설정을 채워주세요.
 # 1. 알리고(Aligo) 이용 시: SMS_PROVIDER = "aligo" 로 설정 후 API 키, 아이디, 등록된 발신번호 입력
 # 2. 솔라피(Solapi) 이용 시: SMS_PROVIDER = "solapi" 로 설정 후 API 키, Secret 키, 등록된 발신번호 입력
-SMS_PROVIDER = "none"       # 'aligo', 'solapi', 'none' 중 선택
-SMS_API_KEY = ""            # 알리고의 API key 또는 솔라피의 API key
+SMS_PROVIDER = "aligo"       # 'aligo', 'solapi', 'none' 중 선택
+SMS_API_KEY = "7y38cjghrwi6qvn5z2aoivu2cntcvu72"            # 알리고의 API key 또는 솔라피의 API key
 SMS_API_SECRET = ""         # 솔라피 이용 시에만 사용 (Secret Key)
-SMS_USER_ID = ""            # 알리고 이용 시에만 사용 (알리고 ID)
-SMS_SENDER_NUMBER = ""      # KISA에 등록된 본인의 발신 전화번호 (예: '021234567' 또는 '01012345678')
+SMS_USER_ID = "cwgy71"            # 알리고 이용 시에만 사용 (알리고 ID)
+SMS_SENDER_NUMBER = "01041428686"      # KISA에 등록된 본인의 발신 전화번호 (예: '021234567' 또는 '01012345678')
 
-def dispatch_push_notification(receiver, title, body, link=None):
+# 카카오톡 비즈니스 채널 발신 프로필 키 (알리고의 senderkey 또는 솔라피의 pfId)
+KAKAO_SENDER_KEY = "02887bec62408a96f4135c5dfc72d4597c6b6e9b"       # 예: "a1b2c3d4e5f6..." (알리고) 또는 "KA01PF123456..." (솔라피)
+
+# 승인받은 알림톡 템플릿 코드 매핑 (본인의 알림톡 템플릿 코드에 맞게 설정하세요)
+KAKAO_TPL_LESSON_REQUESTED = "UI_6115"  # 레슨 신청 완료 알림 (예: "tpl_lesson_req")
+KAKAO_TPL_MATCH_PROPOSAL = "UI_6119"    # 프로에게 매칭 제안 알림 (예: "tpl_match_prop")
+KAKAO_TPL_MATCH_SUCCESS = "UI_6120"     # 매칭 성공/결제 대기 알림 (예: "tpl_match_success")
+KAKAO_TPL_MATCH_CONFIRMED = "UI_6121"   # 결제 완료/매칭 최종 확정 알림 (예: "tpl_match_confirm")
+
+def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
+    if not SMS_API_KEY or not SMS_USER_ID or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
+        print("[Aligo Alimtalk] API key, User ID, Sender Number, or Sender Key is missing. Skipping.", flush=True)
+        return False
+        
+    url = "https://apis.aligo.in/akv10/alimtalk/send/"
+    
+    # 알림톡 기본 전송 정보
+    payload = {
+        "key": SMS_API_KEY,
+        "userid": SMS_USER_ID,
+        "sender": SMS_SENDER_NUMBER,
+        "senderkey": KAKAO_SENDER_KEY,
+        "tpl_code": tpl_code,
+        "receiver_1": receiver,
+        "subject_1": subject,
+        "message_1": message,
+        "failover": "Y",                # 대체 발송 사용
+        "fsubject_1": subject,          # 대체 발송 제목
+        "fmessage_1": message           # 대체 발송 내용
+    }
+    
+    # 링크가 있고 버튼을 지원하는 경우 버튼 페이로드 추가 (보통 알림톡 템플릿 심사 시 지정한 형식과 같아야 함)
+    if link:
+        button_info = {
+            "button": [
+                {
+                    "name": "자세히 보기",
+                    "linkType": "WL",
+                    "linkUrl1": link, # Mobile Web Link
+                    "linkUrl2": link  # PC Web Link
+                }
+            ]
+        }
+        payload["button_1"] = json.dumps(button_info)
+        
+    try:
+        import urllib.request
+        import urllib.parse
+        data = urllib.parse.urlencode(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data)
+        with urllib.request.urlopen(req, timeout=5) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            if str(res_data.get("result_code")) == "1" or res_data.get("code") == 0:
+                print(f"[Aligo Alimtalk] 알림톡 전송 요청 성공: {receiver} (대체 발송 활성화)", flush=True)
+                return True
+            else:
+                print(f"[Aligo Alimtalk] 알림톡 전송 요청 실패: {res_data}", flush=True)
+                return False
+    except Exception as e:
+        print(f"[Aligo Alimtalk] 에러 발생: {e}", flush=True)
+        return False
+
+def send_solapi_alimtalk(receiver, template_id, message, link=None):
+    if not SMS_API_KEY or not SMS_API_SECRET or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
+        print("[Solapi Alimtalk] API Key, Secret, Sender Number, or Profile Key is missing. Skipping.", flush=True)
+        return False
+        
+    import time
+    import uuid
+    import hmac
+    import hashlib
+    import urllib.request
+    
+    # 솔라피 REST API HMAC 인증 생성
+    now = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
+    salt = str(uuid.uuid4().hex)
+    combined = now + salt
+    signature = hmac.new(
+        SMS_API_SECRET.encode('utf-8'),
+        combined.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    
+    auth_header = f"HMAC-SHA256 apiKey={SMS_API_KEY}, date={now}, salt={salt}, signature={signature}"
+    url = "https://api.solapi.com/messages/v4/send"
+    
+    # 대체 발송 본문(text) 포함 (알림톡 실패 시 자동으로 문자로 대체 전송됨)
+    payload = {
+        "message": {
+            "to": receiver,
+            "from": SMS_SENDER_NUMBER,
+            "text": message,  # 알림톡 실패 시 대체 발송되는 LMS/SMS 메시지 내용
+            "type": "ATA",
+            "kakaoOptions": {
+                "pfId": KAKAO_SENDER_KEY,
+                "templateId": template_id
+            }
+        }
+    }
+    
+    if link:
+        # 알림톡 버튼 정보 추가 (템플릿에 버튼이 정의되어 승인받은 경우에만 작동)
+        payload["message"]["kakaoOptions"]["buttons"] = [
+            {
+                "buttonName": "자세히 보기",
+                "buttonType": "WL",
+                "linkMo": link,
+                "linkPc": link
+            }
+        ]
+        
+    try:
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, method="POST")
+        req.add_header("Authorization", auth_header)
+        req.add_header("Content-Type", "application/json")
+        
+        with urllib.request.urlopen(req, timeout=5) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            if str(res_data.get("statusCode")) in ["2000", "3000"] or "messageId" in res_data.get("description", "") or "messageId" in str(res_data):
+                print(f"[Solapi Alimtalk] 알림톡 전송 요청 성공: {receiver} (대체 발송 활성화)", flush=True)
+                return True
+            else:
+                print(f"[Solapi Alimtalk] 알림톡 전송 요청 실패: {res_data}", flush=True)
+                return False
+    except Exception as e:
+        print(f"[Solapi Alimtalk] 에러 발생: {e}", flush=True)
+        return False
+
+def dispatch_push_notification(receiver, title, body, link=None, template_type=None):
     if not receiver:
         return
     
@@ -182,6 +327,31 @@ def dispatch_push_notification(receiver, title, body, link=None):
         except Exception as e:
             print(f"[Firebase FCM] 푸시 알림 전송 실패: {e}", flush=True)
             
+    # 2. 카카오 알림톡 및 대체 문자 전송 연동 추가
+    if SMS_PROVIDER != "none" and template_type:
+        # 알림톡 본문에 타이틀과 내용을 결합
+        talk_message = f"[{title}]\n{body}"
+        tpl_code = None
+        
+        # 템플릿 코드 매칭
+        if template_type == "lesson_requested":
+            tpl_code = KAKAO_TPL_LESSON_REQUESTED
+        elif template_type == "match_proposal":
+            tpl_code = KAKAO_TPL_MATCH_PROPOSAL
+        elif template_type == "match_success":
+            tpl_code = KAKAO_TPL_MATCH_SUCCESS
+        elif template_type == "match_confirmed":
+            tpl_code = KAKAO_TPL_MATCH_CONFIRMED
+            
+        # 템플릿 코드가 설정되어 있는 경우 알림톡 전송 시도
+        if tpl_code:
+            if SMS_PROVIDER == "aligo":
+                send_aligo_alimtalk(clean_receiver, tpl_code, title, talk_message, link)
+            elif SMS_PROVIDER == "solapi":
+                send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link)
+        else:
+            print(f"[Kakao Alimtalk] 템플릿 코드가 정의되지 않았습니다 (타입: {template_type}). 발송을 스킵합니다.", flush=True)
+            
     # 가상 앱 PUSH API 연동 콘솔 시뮬레이션 출력
     print(f"\n==================================================", flush=True)
     print(f"🔵 [withPRO App Push API 호출]", flush=True)
@@ -190,6 +360,8 @@ def dispatch_push_notification(receiver, title, body, link=None):
     print(f"알림 바디: {body}", flush=True)
     if link:
         print(f"랜딩 링크: {link}", flush=True)
+    if template_type:
+        print(f"알림 템플릿 타입: {template_type}", flush=True)
     print(f"==================================================\n", flush=True)
 
 # 관리자 대시보드 비밀 비밀번호
@@ -270,6 +442,72 @@ def send_discord_notification(title, fields):
             
     # Run in a background thread to prevent blocking the single-threaded HTTP server
     threading.Thread(target=send_webhook, daemon=True).start()
+
+def check_pro_commissions():
+    import time
+    import datetime
+    import sqlite3
+    # Wait for the server to spin up
+    time.sleep(5)
+    print("[check_pro_commissions] Background commission checker thread started.", flush=True)
+    while True:
+        try:
+            # Get current date in KST (UTC+9)
+            kst = datetime.timezone(datetime.timedelta(hours=9))
+            now_kst = datetime.datetime.now(kst)
+            today_str = now_kst.strftime("%Y-%m-%d")
+
+            conn = sqlite3.connect(DB_NAME)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+
+            # Find lesson requests where status is '결제완료' (finalized match by amateur)
+            # and the lesson_date is past (less than today_str)
+            # and pro has not paid commission yet (pro_pay_status != '결제완료')
+            c.execute("""
+                SELECT lr.*, pu.name as pro_name, pu.contact as pro_contact, pu.status as pro_status
+                FROM lesson_requests lr
+                JOIN pro_users pu ON lr.matched_pro_id = pu.id
+                WHERE lr.status = '결제완료'
+                  AND lr.lesson_date < ?
+                  AND (lr.pro_pay_status IS NULL OR lr.pro_pay_status != '결제완료')
+            """, (today_str,))
+            unpaid_lessons = c.fetchall()
+
+            for row in unpaid_lessons:
+                req_id = row['id']
+                pro_id = row['matched_pro_id']
+                pro_contact = row['pro_contact']
+                pro_name = row['pro_name']
+                golf_course = row['golf_course']
+                lesson_date = row['lesson_date']
+
+                # 1. Update pro status to '정지' in DB if not already suspended
+                if row['pro_status'] != '정지':
+                    c.execute("UPDATE pro_users SET status = '정지' WHERE id = ?", (pro_id,))
+                    # Send a discord notification about the suspension
+                    send_discord_notification("🚨 파트너 프로 활동 정지 (수수료 미납)", {
+                        "프로명": pro_name,
+                        "연락처": pro_contact,
+                        "미납 라운딩": f"{golf_course} ({lesson_date})",
+                        "사유": "라운딩 다음 날 수수료(5만원) 미납으로 인한 정지"
+                    })
+
+                # 2. Check if we already sent the push notification for this request
+                if not row['pro_notified']:
+                    title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
+                    body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 다음날인 오늘까지 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 되지 않으면 파트너 프로로서 정지(활동 정지 및 매칭 배정 불가) 상태가 유지됩니다. 마이페이지에서 결제를 완료하시면 즉시 정지가 해제됩니다."
+                    pro_link = "http://localhost:8000/index.html?view=pro-mypage"
+                    dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
+                    c.execute("UPDATE lesson_requests SET pro_notified = 1 WHERE id = ?", (req_id,))
+
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"[check_pro_commissions background thread error] {e}", flush=True)
+
+        # Run every 60 seconds
+        time.sleep(60)
 
 class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -679,7 +917,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         customer_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={row['id']}"
-                        dispatch_push_notification(row['user_contact'], customer_title, customer_body, customer_link)
+                        dispatch_push_notification(row['user_contact'], customer_title, customer_body, customer_link, template_type="match_success")
                 else:
                     c.execute("UPDATE lesson_requests SET status = '매칭 대기중', matched_pro_id = NULL WHERE id = ? AND matched_pro_id = ?", (req_id, pro_id))
                     
@@ -743,11 +981,11 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             
             # 앱 푸시 알림 발송
             title = "⛳ 필드레슨 매칭 요청 접수 완료"
-            body = f"[withPRO] {data.get('userName', '아마추어')}님, '{data.get('golfCourse')}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 앱 푸시 알림으로 다시 알려드리겠습니다."
+            body = f"[withPRO] {data.get('userName', '아마추어')}님, '{data.get('golfCourse')}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다."
             proto = self.headers.get('X-Forwarded-Proto', 'http')
             host_header = self.headers.get('Host', 'localhost:8000')
             user_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={inserted_id}"
-            dispatch_push_notification(data.get('userContact'), title, body, user_link)
+            dispatch_push_notification(data.get('userContact'), title, body, user_link, template_type="lesson_requested")
             
             # 디스코드 알림 발송
             fields = {
@@ -838,7 +1076,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         pro_link = f"{proto}://{host_header}/index.html?view=pro-accept&id={row['id']}&pro_id={pro_id}"
-                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body, pro_link)
+                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body, pro_link, template_type="match_proposal")
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -899,14 +1137,103 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         customer_name = row['user_name'] if row['user_name'] else "아마추어 고객"
                         customer_contact = row['user_contact'] if row['user_contact'] else "-"
                         
-                        pro_title = "💰 필드레슨 매칭 최종 확정!"
-                        pro_body = f"[withPRO] {pro_name} 프로님, 필드레슨 예약금이 완납되어 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
-                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body)
+                        pro_title = "⛳ 필드레슨 매칭 최종 확정!"
+                        pro_body = f"[withPRO] {pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
+                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body, template_type="match_confirmed")
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({'status': 'success', 'message': '결제가 완료되었습니다.'}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+        elif parsed_path.path == '/api/pro/payment-complete':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+            req_id = data.get('id')
+            cert = data.get('cert')
+            
+            if not req_id or not cert:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Missing ID or Cert'}).encode('utf-8'))
+                return
+                
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                conn.row_factory = sqlite3.Row
+                c = conn.cursor()
+                
+                # Verify pro
+                c.execute("SELECT * FROM pro_users WHERE cert_number = ?", (cert,))
+                pro_row = c.fetchone()
+                if not pro_row:
+                    conn.close()
+                    self.send_response(404)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'Pro Not Found'}).encode('utf-8'))
+                    return
+                
+                pro_id = pro_row['id']
+                pro_name = pro_row['name'] if pro_row['name'] else "레슨 프로"
+                pro_contact = pro_row['contact'] if pro_row['contact'] else "-"
+                
+                # Update lesson request's pro pay status
+                c.execute("UPDATE lesson_requests SET pro_pay_status = '결제완료', pro_pay_method = ?, pro_imp_uid = ? WHERE id = ? AND matched_pro_id = ?", 
+                          (data.get('pay_method'), data.get('imp_uid'), req_id, pro_id))
+                
+                # Fetch request details for notifications
+                c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
+                req_row = c.fetchone()
+                
+                # Check if this pro still has any unpaid past lessons
+                import datetime
+                kst = datetime.timezone(datetime.timedelta(hours=9))
+                now_kst = datetime.datetime.now(kst)
+                today_str = now_kst.strftime("%Y-%m-%d")
+                
+                c.execute("""
+                    SELECT COUNT(*) FROM lesson_requests
+                    WHERE matched_pro_id = ?
+                      AND status = '결제완료'
+                      AND lesson_date < ?
+                      AND (pro_pay_status IS NULL OR pro_pay_status != '결제완료')
+                """, (pro_id, today_str))
+                unpaid_count = c.fetchone()[0]
+                
+                # If no other unpaid lessons, restore status to '승인완료'
+                if unpaid_count == 0:
+                    c.execute("UPDATE pro_users SET status = '승인완료' WHERE id = ?", (pro_id,))
+                    
+                conn.commit()
+                conn.close()
+                
+                # Send Discord Notification
+                if req_row:
+                    fields = {
+                        "프로명": pro_name,
+                        "연락처": pro_contact,
+                        "골프장": req_row['golf_course'],
+                        "라운딩 날짜": req_row['lesson_date'],
+                        "결제 금액": "50,000원",
+                        "결제 수단": data.get('pay_method') if data.get('pay_method') else "신용카드",
+                        "포트원 거래번호": data.get('imp_uid') if data.get('imp_uid') else "시뮬레이션",
+                        "남은 미납 건수": str(unpaid_count),
+                        "프로 활동 상태": "승인 완료 (정식 파트너)" if unpaid_count == 0 else "정지 유지 (추가 미납 있음)"
+                    }
+                    send_discord_notification("💰 파트너 프로 라운딩 수수료 결제 완료", fields)
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'success', 'message': '수수료 결제가 완료되었습니다.'}).encode('utf-8'))
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
@@ -1263,6 +1590,9 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
 
 if __name__ == '__main__':
     init_db()
+    # Start background commission checker thread
+    import threading
+    threading.Thread(target=check_pro_commissions, daemon=True).start()
     # Reuse address to prevent address already in use error during frequent restarts
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), MyRequestHandler) as httpd:
