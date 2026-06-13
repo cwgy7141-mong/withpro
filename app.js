@@ -2026,16 +2026,12 @@ const app = {
             const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
             
             const couponBadgeHtml = data.issued_coupon_code ? `
-                <div style="background-color: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 10px; text-align: center;">
+                <div style="background-color: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 10px; text-align: center; margin-top: 12px;">
                     <span style="font-size: 11px; font-weight: 700; color: #047857; display: block; margin-bottom: 4px; text-transform: uppercase;">🎁 오픈 이벤트 쿠폰 발급 완료</span>
                     <strong style="font-size: 16px; color: #065f46; letter-spacing: 0.5px;">${app.escapeHtml(data.issued_coupon_code)}</strong>
                     <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 4px;">(결제창의 쿠폰 등록란에 위 코드를 입력하면 30,000원이 자동 할인됩니다)</div>
                 </div>
-            ` : `
-                <div style="background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
-                    <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">ℹ️ 오픈 이벤트 쿠폰은 최초 1회만 발급되므로 추가 발급되지 않았습니다.</span>
-                </div>
-            `;
+            ` : '';
 
             return `
                 <div style="margin-top: 15px; padding: 15px; border-radius: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0;">

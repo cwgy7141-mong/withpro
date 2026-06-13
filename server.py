@@ -1290,7 +1290,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime')
                         WHERE id = ?
                     """, (review_text, review_rating, req_id))
-                    msg = "후기가 성공적으로 등록되었습니다. (쿠폰은 계정당 1회만 발급되므로 추가 발급되지 않았습니다.)"
+                    msg = "소중한 후기가 등록되었습니다. 참여해 주셔서 대단히 감사합니다!"
                     issued_code = None
                 else:
                     c.execute("""
