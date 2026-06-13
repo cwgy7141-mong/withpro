@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>withPRO - 관리자 대시보드</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -766,7 +767,7 @@
                                 <th style="width: 130px;">라운딩 날짜</th>
                                 <th style="width: 110px;">티오프 시간</th>
                                 <th style="width: 120px;">매칭 상태</th>
-                                <th style="width: 150px;">관리자 작업</th>
+                                <th style="width: 180px;">관리자 작업</th>
                                 <th style="width: 140px;">신청 시각</th>
                             </tr>
                         </thead>
@@ -788,7 +789,7 @@
                                 <th>활동 가능 요일</th>
                                 <th>주요 활동 지역</th>
                                 <th style="width: 100px;">승인 상태</th>
-                                <th style="width: 130px;">관리자 작업</th>
+                                <th style="width: 160px;">관리자 작업</th>
                                 <th style="width: 130px;">등록 신청 시각</th>
                             </tr>
                         </thead>
@@ -808,6 +809,7 @@
                                 <th style="width: 180px;">연락처</th>
                                 <th style="width: 100px;">성별</th>
                                 <th>활동 희망 지역</th>
+                                <th style="width: 130px;">관리자 작업</th>
                                 <th style="width: 180px;">가입 일시</th>
                             </tr>
                         </thead>
@@ -1573,7 +1575,12 @@
                             <td>📅 ${this.escapeHtml(item.lesson_date)}</td>
                             <td>⏰ ${this.escapeHtml(item.lesson_time)}</td>
                             <td>${statusBadge}</td>
-                            <td>${actionHtml}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    ${actionHtml}
+                                    <button class="action-btn-sm" style="background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; transition: var(--transition);" onclick="adminApp.deleteItem('request', ${item.id}, '${this.escapeHtml(item.user_name || '')} (${this.escapeHtml(item.golf_course)})')">삭제</button>
+                                </div>
+                            </td>
                             <td style="color: var(--text-muted); font-size: 13px;">${this.formatDate(item.created_at)}</td>
                         </tr>
                     `;
@@ -1614,7 +1621,12 @@
                             <td style="font-weight: 500;">${this.escapeHtml(item.available_days || '-')}</td>
                             <td>📍 ${this.escapeHtml(item.regions || '-')}</td>
                             <td>${statusBadge}</td>
-                            <td>${actionHtml}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    ${actionHtml}
+                                    <button class="action-btn-sm" style="background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; transition: var(--transition);" onclick="adminApp.deleteItem('pro', ${item.id}, '${this.escapeHtml(item.name || '')}')">삭제</button>
+                                </div>
+                            </td>
                             <td style="color: var(--text-muted); font-size: 13px;">${this.formatDate(item.created_at)}</td>
                         </tr>
                     `;
@@ -1624,7 +1636,7 @@
             renderUsersTable: function(dataList) {
                 const tbody = document.querySelector('#users-tab .table-body');
                 if (dataList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">👤</span>가입된 일반 회원 내역이 없습니다.</div></td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><span class="empty-icon">👤</span>가입된 일반 회원 내역이 없습니다.</div></td></tr>`;
                     return;
                 }
                 tbody.innerHTML = dataList.map((item, idx) => `
@@ -1634,6 +1646,9 @@
                         <td>📞 ${this.escapeHtml(item.contact)}</td>
                         <td>${this.escapeHtml(item.gender || '-')}</td>
                         <td>📍 ${this.escapeHtml(item.region || '-')}</td>
+                        <td>
+                            <button class="action-btn-sm" style="background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; transition: var(--transition);" onclick="adminApp.deleteItem('user', ${item.id}, '${this.escapeHtml(item.name)}')">삭제</button>
+                        </td>
                         <td style="color: var(--text-muted); font-size: 13px;">${this.formatDate(item.created_at)}</td>
                     </tr>
                 `).join('');
@@ -1994,6 +2009,40 @@
                     }, 2500);
                     
                     this.fetchData();
+                } catch (e) {
+                    alert('서버 통신 중 오류가 발생했습니다.');
+                }
+            },
+
+            deleteItem: async function(type, id, name) {
+                let typeKo = '일반 회원';
+                if (type === 'pro') typeKo = '프로 회원';
+                else if (type === 'request') typeKo = '레슨 매칭 신청';
+
+                const confirmMsg = `[데이터 삭제]\n정말로 해당 ${typeKo} 데이터를 삭제하시겠습니까?\n\n대상: ${name}`;
+                if (!await window.withproConfirm(confirmMsg)) return;
+
+                try {
+                    const response = await fetch('/api/admin/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            key: this.currentKey,
+                            type: type,
+                            id: id
+                        })
+                    });
+
+                    const resData = await response.json();
+                    if (!response.ok) {
+                        alert(resData.error || '삭제 처리 중 오류가 발생했습니다.');
+                        return;
+                    }
+
+                    alert(resData.message || '성공적으로 삭제되었습니다.');
+                    this.fetchData(); // 대시보드 데이터 갱신
                 } catch (e) {
                     alert('서버 통신 중 오류가 발생했습니다.');
                 }

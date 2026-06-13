@@ -1291,6 +1291,65 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 self.end_headers()
                 self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
+        elif parsed_path.path == '/api/admin/delete':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+            key = data.get('key')
+            item_type = data.get('type') # 'request', 'pro', 'user'
+            item_id = data.get('id')
+            
+            if key != ADMIN_SECRET_KEY:
+                self.send_response(401)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Unauthorized'}).encode('utf-8'))
+                return
+                
+            if not item_type or not item_id:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Missing type or id'}).encode('utf-8'))
+                return
+                
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                c = conn.cursor()
+                
+                if item_type == 'user':
+                    c.execute("DELETE FROM regular_users WHERE id = ?", (item_id,))
+                elif item_type == 'pro':
+                    c.execute("DELETE FROM pro_users WHERE id = ?", (item_id,))
+                elif item_type == 'request':
+                    c.execute("DELETE FROM lesson_requests WHERE id = ?", (item_id,))
+                else:
+                    conn.close()
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'Invalid type'}).encode('utf-8'))
+                    return
+                    
+                conn.commit()
+                conn.close()
+                
+                # Send Discord Notification
+                send_discord_notification("🗑️ 관리자 데이터 삭제 실행", {
+                    "삭제 대상 구분": item_type,
+                    "삭제 대상 ID": str(item_id)
+                })
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'success', 'message': '성공적으로 삭제되었습니다.'}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
         elif parsed_path.path == '/api/pro/update-profile':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
