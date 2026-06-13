@@ -416,8 +416,31 @@ const app = {
 
         const timeInput = document.getElementById('lesson-time');
         if (timeInput) {
+            let lastMinute = null;
+            
+            // 시간 선택 팝업이 열릴 때(포커스될 때) 기존 분(minute) 값을 저장합니다.
+            timeInput.addEventListener('focus', () => {
+                if (timeInput.value) {
+                    lastMinute = timeInput.value.split(':')[1];
+                } else {
+                    lastMinute = null;
+                }
+            });
+
             const handleTimeChange = (e) => {
-                app.updateTimeDisplay(e.target.value);
+                const val = e.target.value;
+                app.updateTimeDisplay(val);
+                
+                if (val) {
+                    const currentMinute = val.split(':')[1];
+                    // 분(minute) 값이 실제로 변경되었을 때만 사용자가 선택을 완료한 것으로 판단하여 팝업을 닫습니다.
+                    if (lastMinute !== null && currentMinute !== lastMinute) {
+                        setTimeout(() => {
+                            e.target.blur();
+                        }, 80);
+                    }
+                    lastMinute = currentMinute;
+                }
             };
             timeInput.addEventListener('change', handleTimeChange);
             timeInput.addEventListener('input', handleTimeChange);
