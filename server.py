@@ -577,9 +577,27 @@ def check_pro_commissions():
                 pro_name = row['pro_name'] if row['pro_name'] else "배정 프로"
 
                 if user_contact:
-                    title = "🎁 [withPRO] 라운딩 후기 작성 시 3만원 쿠폰 증정"
+                    def clean_phone(phone_str):
+                        return "".join([ch for ch in phone_str if ch.isdigit()])
+                    clean_target_contact = clean_phone(user_contact)
+                    
+                    c.execute("SELECT user_contact FROM lesson_requests WHERE issued_coupon_code = 'WITHPRO30'")
+                    all_issued_rows = c.fetchall()
+                    coupon_already_issued = False
+                    for r in all_issued_rows:
+                        if r['user_contact'] and clean_phone(r['user_contact']) == clean_target_contact:
+                            coupon_already_issued = True
+                            break
+                            
                     customer_link = f"https://withpro.life/index.html?view=my-bookings&id={req_id}"
-                    body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩 후기를 아래 링크에서 남겨주시면 다음 이용 시 사용 가능한 3만원 즉시 할인 쿠폰(WITHPRO30)을 바로 발급해 드립니다!\n후기 작성하기: {customer_link}"
+                    
+                    if coupon_already_issued:
+                        title = "📢 [withPRO] 라운딩 이용 후기 및 피드백 조사"
+                        body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩이 어떠셨는지 아래 링크를 통해 소중한 후기와 피드백을 편하게 들려주세요! 더 나은 서비스 제공을 위해 큰 힘이 됩니다.\n후기 작성하기: {customer_link}"
+                    else:
+                        title = "🎁 [withPRO] 라운딩 후기 작성 시 3만원 쿠폰 증정"
+                        body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩 후기를 아래 링크에서 남겨주시면 다음 이용 시 사용 가능한 3만원 즉시 할인 쿠폰(WITHPRO30)을 바로 발급해 드립니다!\n후기 작성하기: {customer_link}"
+                        
                     dispatch_push_notification(user_contact, title, body, customer_link, template_type="amateur_review_request")
                     c.execute("UPDATE lesson_requests SET review_notified = 1 WHERE id = ?", (req_id,))
 
@@ -747,6 +765,22 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 c = conn.cursor()
                 c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
                 row = c.fetchone()
+                
+                coupon_already_issued = False
+                if row:
+                    user_contact = row['user_contact']
+                    if user_contact:
+                        def clean_phone(phone_str):
+                            return "".join([ch for ch in phone_str if ch.isdigit()])
+                        user_phone_clean = clean_phone(user_contact)
+                        
+                        c.execute("SELECT user_contact FROM lesson_requests WHERE issued_coupon_code = 'WITHPRO30'")
+                        all_issued = c.fetchall()
+                        for r in all_issued:
+                            if r['user_contact'] and clean_phone(r['user_contact']) == user_phone_clean:
+                                coupon_already_issued = True
+                                break
+                
                 conn.close()
                 
                 if not row:
@@ -756,10 +790,13 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                     self.wfile.write(json.dumps({'error': 'Not Found'}).encode('utf-8'))
                     return
                 
+                data_dict = dict(row)
+                data_dict['coupon_already_issued'] = coupon_already_issued
+                
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps(dict(row)).encode('utf-8'))
+                self.wfile.write(json.dumps(data_dict).encode('utf-8'))
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')

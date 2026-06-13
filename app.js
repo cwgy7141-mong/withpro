@@ -2049,15 +2049,25 @@ const app = {
             `;
         }
 
+        const couponIssued = data.coupon_already_issued || (app.verifiedBookings && app.verifiedBookings.some(b => b.issued_coupon_code === 'WITHPRO30'));
+        
+        const titleText = "✍️ 소중한 이용후기를 들려주세요!";
+        
+        const promoHtml = couponIssued ? '' : `
+            <div style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 10px;">
+                후기를 남겨주시면 다음 예약 때 사용 가능한 <strong>3만원 즉시 할인 쿠폰(WITHPRO30)</strong>을 바로 발급해 드립니다.
+            </div>
+        `;
+        
+        const btnText = couponIssued ? "이용 후기 등록하기" : "후기 등록하고 3만원 쿠폰받기";
+
         // 아직 후기를 작성하지 않은 경우
         return `
             <div id="review-form-${data.id}" style="margin-top: 15px; padding: 15px; border-radius: 12px; background-color: #f8fafc; border: 1px dashed #cbd5e1; box-sizing: border-box;">
                 <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
-                    🎁 소중한 이용후기를 들려주세요!
+                    ${titleText}
                 </div>
-                <div style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 10px;">
-                    후기를 남겨주시면 다음 예약 때 사용 가능한 <strong>3만원 즉시 할인 쿠폰(WITHPRO30)</strong>을 바로 발급해 드립니다.
-                </div>
+                ${promoHtml}
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                     <span style="font-size: 13px; font-weight: 600; color: #475569;">평점:</span>
                     <div style="display: flex; gap: 6px; font-size: 22px; cursor: pointer;">
@@ -2069,7 +2079,7 @@ const app = {
                     </div>
                 </div>
                 <textarea id="review-text-${data.id}" placeholder="프로님과의 필드레슨은 만족스러우셨나요? 소중한 의견을 들려주세요 (최소 5자 이상)" style="width: 100%; height: 75px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 500; resize: none; box-sizing: border-box; margin-bottom: 8px; font-family: inherit; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
-                <button class="btn btn-primary" onclick="app.submitReview(${data.id})" style="width: 100%; padding: 10px; font-size: 13.5px; font-weight: 700; border-radius: 8px; background-color: var(--primary-color); border: none; color: white; cursor: pointer; transition: background-color 0.2s;">후기 등록하고 3만원 쿠폰받기</button>
+                <button class="btn btn-primary" onclick="app.submitReview(${data.id})" style="width: 100%; padding: 10px; font-size: 13.5px; font-weight: 700; border-radius: 8px; background-color: var(--primary-color); border: none; color: white; cursor: pointer; transition: background-color 0.2s;">${btnText}</button>
             </div>
         `;
     },
