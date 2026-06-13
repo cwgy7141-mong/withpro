@@ -409,9 +409,6 @@ const app = {
         if (dateInput) {
             const handleDateChange = (e) => {
                 app.updateDateDisplay(e.target.value);
-                if (e.target.value) {
-                    e.target.blur(); // 날짜 선택 완료 시 내장 팝업창을 즉시 닫습니다.
-                }
             };
             dateInput.addEventListener('change', handleDateChange);
             dateInput.addEventListener('input', handleDateChange);
@@ -421,9 +418,6 @@ const app = {
         if (timeInput) {
             const handleTimeChange = (e) => {
                 app.updateTimeDisplay(e.target.value);
-                if (e.target.value) {
-                    e.target.blur(); // 시간(오전/오후, 시, 분) 선택 완료 시 내장 팝업창을 즉시 닫습니다.
-                }
             };
             timeInput.addEventListener('change', handleTimeChange);
             timeInput.addEventListener('input', handleTimeChange);
