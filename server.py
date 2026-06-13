@@ -158,6 +158,14 @@ def init_db():
         c.execute("ALTER TABLE lesson_requests ADD COLUMN reviewed_at TEXT")
     except sqlite3.OperationalError:
         pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN issued_coupon_code TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN issued_coupon_status TEXT DEFAULT '없음'")
+    except sqlite3.OperationalError:
+        pass
         
     conn.commit()
     conn.close()
@@ -1204,21 +1212,22 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 conn.row_factory = sqlite3.Row
                 c = conn.cursor()
                 
-                c.execute("SELECT user_contact FROM lesson_requests WHERE status = '결제완료' AND coupon_code = ?", (code,))
+                # 후기 보상으로 발급받은 쿠폰 중 '사용가능'한 것이 있는지 확인
+                c.execute("SELECT id, user_contact FROM lesson_requests WHERE issued_coupon_code = ? AND issued_coupon_status = '사용가능'", (code,))
                 rows = c.fetchall()
                 conn.close()
                 
-                already_used = False
+                has_available_coupon = False
                 for r in rows:
                     if r['user_contact'] and clean_phone(r['user_contact']) == clean_input_contact:
-                        already_used = True
+                        has_available_coupon = True
                         break
                         
-                if already_used:
+                if not has_available_coupon:
                     self.send_response(400)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
-                    self.wfile.write(json.dumps({'error': '이미 해당 쿠폰을 사용하셨습니다. (1인 1회 제한)'}).encode('utf-8'))
+                    self.wfile.write(json.dumps({'error': '사용 가능한 후기 작성 할인 쿠폰이 없습니다.'}).encode('utf-8'))
                     return
                     
                 self.send_response(200)
@@ -1256,9 +1265,11 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 conn.row_factory = sqlite3.Row
                 c = conn.cursor()
                 
+                # 후기 저장 및 쿠폰 '사용가능' 발급
                 c.execute("""
                     UPDATE lesson_requests 
-                    SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime')
+                    SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime'),
+                        issued_coupon_code = 'WITHPRO30', issued_coupon_status = '사용가능'
                     WHERE id = ?
                 """, (review_text, review_rating, req_id))
                 
@@ -1312,6 +1323,28 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 coupon_code = data.get('coupon_code')
                 discount_amount = data.get('discount_amount', 0)
                 paid_amount = data.get('paid_amount', 50000)
+                
+                def clean_phone(phone_str):
+                    return "".join([ch for ch in phone_str if ch.isdigit()])
+                
+                # 쿠폰 소멸(사용완료) 처리
+                if coupon_code:
+                    c.execute("SELECT user_contact FROM lesson_requests WHERE id = ?", (req_id,))
+                    current_req = c.fetchone()
+                    if current_req and current_req['user_contact']:
+                        user_phone = clean_phone(current_req['user_contact'])
+                        
+                        c.execute("SELECT id, user_contact FROM lesson_requests WHERE issued_coupon_code = ? AND issued_coupon_status = '사용가능'", (coupon_code,))
+                        coupon_rows = c.fetchall()
+                        
+                        target_coupon_id = None
+                        for cr in coupon_rows:
+                            if cr['user_contact'] and clean_phone(cr['user_contact']) == user_phone:
+                                target_coupon_id = cr['id']
+                                break
+                                
+                        if target_coupon_id:
+                            c.execute("UPDATE lesson_requests SET issued_coupon_status = '사용완료' WHERE id = ?", (target_coupon_id,))
                 
                 c.execute("""
                     UPDATE lesson_requests 
