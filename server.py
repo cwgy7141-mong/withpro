@@ -193,10 +193,10 @@ KAKAO_TPL_LESSON_REQUESTED = "UI_6115"  # 레슨 신청 완료 알림 (예: "tpl
 KAKAO_TPL_MATCH_PROPOSAL = "UI_6119"    # 프로에게 매칭 제안 알림 (예: "tpl_match_prop")
 KAKAO_TPL_MATCH_SUCCESS = "UI_6120"     # 매칭 성공/결제 대기 알림 (예: "tpl_match_success")
 KAKAO_TPL_MATCH_CONFIRMED = "UI_6121"   # 결제 완료/매칭 최종 확정 알림 (예: "tpl_match_confirm")
-KAKAO_TPL_PRO_COMMISSION_DUE = "UI_xxxx" # 프로 수수료 미납 및 정지 안내 알림 (알리고 등록 필요, 예: "UI_xxxx")
-KAKAO_TPL_PRO_PAYMENT_REQUEST = "UI_yyyy" # 프로 수수료 납부 독촉 알림 (알리고 등록 필요, 예: "UI_yyyy")
-KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITH_COUPON = "UI_zzzz1" # 쿠폰 포함 후기 요청 알림 (알리고 등록 필요, 예: "UI_zzzz1")
-KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITHOUT_COUPON = "UI_zzzz2" # 쿠폰 미포함 후기 요청 알림 (알리고 등록 필요, 예: "UI_zzzz2")
+KAKAO_TPL_PRO_COMMISSION_DUE = "UI_6514" # 프로 수수료 미납 및 정지 안내 알림
+KAKAO_TPL_PRO_PAYMENT_REQUEST = "UI_6513" # 프로 수수료 납부 독촉 알림
+KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITH_COUPON = "UI_6516" # 쿠폰 포함 후기 요청 알림
+KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITHOUT_COUPON = "UI_6517" # 쿠폰 미포함 후기 요청 알림
 
 def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
     if not SMS_API_KEY or not SMS_USER_ID or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
