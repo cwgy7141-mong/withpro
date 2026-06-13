@@ -815,6 +815,7 @@ const app = {
                                 <span class="booking-detail-value">${app.escapeHtml(data.pay_method || '간편결제')}</span>
                             </li>
                         </ul>
+                        ${app.getReviewSectionHtml(data)}
                     </div>
                 `;
             }
@@ -1042,6 +1043,7 @@ const app = {
                                     <span class="booking-detail-value">${app.escapeHtml(data.pay_method || '간편결제')}</span>
                                 </li>
                             </ul>
+                            ${app.getReviewSectionHtml(data)}
                         </div>
                     `;
                 }
@@ -1087,10 +1089,90 @@ const app = {
         // 검증 통과 시 해당 예약 ID를 기기에 임시 보관 (결제 요청용)
         localStorage.setItem('withpro_last_request_id', bookingId);
         
-        // 결제창 내의 사용자 정보 확인 단계로 이동
+        // 쿠폰 상태 초기화
+        app.appliedCouponCode = null;
+        app.couponDiscount = 0;
+        
+        const couponInput = document.getElementById('coupon-code-input');
+        if (couponInput) couponInput.value = '';
+        const couponMsg = document.getElementById('coupon-message');
+        if (couponMsg) {
+            couponMsg.style.display = 'none';
+            couponMsg.innerText = '';
+        }
+        
+        const priceDiv = document.querySelector('.payment-summary-card .payment-price');
+        if (priceDiv) priceDiv.innerText = '50,000원';
+        
+        const payBtn = document.querySelector('.bottom-action button');
+        if (payBtn) payBtn.innerText = '50,000원 결제하기';
         
         app.navigate('view-payment');
         app.switchPayMethod('card');
+    },
+
+    applyCoupon: async function() {
+        const input = document.getElementById('coupon-code-input');
+        const msgDiv = document.getElementById('coupon-message');
+        if (!input || !msgDiv) return;
+        
+        const code = input.value.trim().toUpperCase();
+        if (!code) {
+            msgDiv.style.color = '#ef4444';
+            msgDiv.innerText = '⚠️ 쿠폰 코드를 입력해 주세요.';
+            msgDiv.style.display = 'block';
+            return;
+        }
+        
+        const reqId = localStorage.getItem('withpro_last_request_id');
+        const booking = app.verifiedBookings && app.verifiedBookings.find(b => b.id == reqId);
+        if (!booking) {
+            msgDiv.style.color = '#ef4444';
+            msgDiv.innerText = '⚠️ 예약 조회 정보가 유효하지 않습니다.';
+            msgDiv.style.display = 'block';
+            return;
+        }
+        
+        msgDiv.style.color = '#4b5563';
+        msgDiv.innerText = '⏳ 쿠폰 검증 중...';
+        msgDiv.style.display = 'block';
+        
+        try {
+            const response = await fetch('/api/coupon/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: code,
+                    contact: booking.user_contact,
+                    req_id: reqId
+                })
+            });
+            
+            const resData = await response.json();
+            if (!response.ok) {
+                msgDiv.style.color = '#ef4444';
+                msgDiv.innerText = `❌ ${resData.error || '유효하지 않은 쿠폰입니다.'}`;
+                return;
+            }
+            
+            app.appliedCouponCode = code;
+            app.couponDiscount = resData.discount_amount || 0;
+            
+            const finalPrice = Math.max(0, 50000 - app.couponDiscount);
+            
+            msgDiv.style.color = '#059669';
+            msgDiv.innerText = `✓ ${app.couponDiscount.toLocaleString()}원 할인 쿠폰이 적용되었습니다.`;
+            
+            const priceDiv = document.querySelector('.payment-summary-card .payment-price');
+            if (priceDiv) priceDiv.innerText = `${finalPrice.toLocaleString()}원`;
+            
+            const payBtn = document.querySelector('.bottom-action button');
+            if (payBtn) payBtn.innerText = `${finalPrice.toLocaleString()}원 결제하기`;
+            
+        } catch (e) {
+            msgDiv.style.color = '#ef4444';
+            msgDiv.innerText = '❌ 서버 통신 중 오류가 발생했습니다.';
+        }
     },
 
     switchPayMethod: function(method) {
@@ -1149,13 +1231,16 @@ const app = {
 
         const merchantUid = `withpro_${reqId}_${Date.now()}`;
         
+        // 할인 적용된 결제 금액 계산
+        const amount = Math.max(0, 50000 - (app.couponDiscount || 0));
+
         // 포트원 결제창 호출 및 처리 (실제 본인인증 완료된 사용자의 이름과 연락처 주입)
         IMP.request_pay({
             pg: pgProvider,
             pay_method: payMethodCode,
             merchant_uid: merchantUid,
             name: "withPRO 필드레슨 예약 보증금",
-            amount: 50000,
+            amount: amount,
             buyer_name: booking.user_name,
             buyer_tel: booking.user_contact,
             m_redirect_url: window.location.origin + "/index.html?view=my-bookings" // 모바일 결제 리다이렉트 대응
@@ -1173,7 +1258,10 @@ const app = {
                             id: reqId, 
                             pay_method: payMethodText,
                             imp_uid: rsp.imp_uid,
-                            merchant_uid: rsp.merchant_uid 
+                            merchant_uid: rsp.merchant_uid,
+                            coupon_code: app.appliedCouponCode,
+                            discount_amount: app.couponDiscount || 0,
+                            paid_amount: amount
                         })
                     });
                     
@@ -1183,10 +1271,10 @@ const app = {
                         throw new Error("결제 처리 API 통신 실패");
                     }
                     
-                    // 성공 팝업 결제 수단 명시
+                    // 성공 팝업 결제 수단 및 금액 명시
                     const successSubtitle = document.querySelector('#payment-success-overlay .success-subtitle');
                     if (successSubtitle) {
-                        successSubtitle.innerHTML = `50,000원 예약금이 <strong>${app.escapeHtml(payMethodText)}</strong>으로 성공적으로 수납되었습니다.<br>필드레슨 매칭이 최종 확정되었습니다.`;
+                        successSubtitle.innerHTML = `${amount.toLocaleString()}원 예약금이 <strong>${app.escapeHtml(payMethodText)}</strong>으로 성공적으로 수납되었습니다.<br>필드레슨 매칭이 최종 확정되었습니다.`;
                     }
                     
                     document.getElementById('payment-success-overlay').classList.add('active');
@@ -1913,6 +2001,138 @@ const app = {
     
     closePrivacyModal: function() {
         document.getElementById('privacy-modal').classList.remove('active');
+    },
+
+    getReviewSectionHtml: function(data) {
+        // KST 오늘 날짜 구하기
+        const d = new Date();
+        const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+        const kst = new Date(utc + (9 * 60 * 60 * 1000));
+        const yyyy = kst.getFullYear();
+        let mm = kst.getMonth() + 1;
+        let dd = kst.getDate();
+        if (mm < 10) mm = '0' + mm;
+        if (dd < 10) dd = '0' + dd;
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+
+        // 라운딩 날짜가 오늘이거나 오늘보다 과거인 경우에만 후기 작성 활성화
+        if (data.lesson_date > todayStr) {
+            return '';
+        }
+
+        // 이미 작성된 후기가 있는 경우
+        if (data.review_text) {
+            const rating = data.review_rating || 5;
+            const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+            return `
+                <div style="margin-top: 15px; padding: 15px; border-radius: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0;">
+                    <div style="font-size: 13.5px; font-weight: 700; color: #166534; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                        ✍️ 작성한 이용 후기
+                    </div>
+                    <div style="display: flex; gap: 2px; font-size: 14px; color: #eab308; margin-bottom: 6px;">
+                        ${stars}
+                    </div>
+                    <div style="font-size: 13px; color: #374151; font-weight: 500; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; background-color: white; padding: 10px; border-radius: 6px; border: 1px solid rgba(22, 101, 52, 0.08);">
+                        ${app.escapeHtml(data.review_text)}
+                    </div>
+                    <div style="background-color: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 10px; text-align: center;">
+                        <span style="font-size: 11px; font-weight: 700; color: #047857; display: block; margin-bottom: 4px; text-transform: uppercase;">🎁 다음 이용 시 사용 가능한 쿠폰</span>
+                        <strong style="font-size: 16px; color: #065f46; letter-spacing: 0.5px;">WITHPRO30</strong>
+                        <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 4px;">(결제창의 쿠폰 등록란에 위 코드를 입력하면 30,000원이 자동 할인됩니다)</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 아직 후기를 작성하지 않은 경우
+        return `
+            <div id="review-form-${data.id}" style="margin-top: 15px; padding: 15px; border-radius: 12px; background-color: #f8fafc; border: 1px dashed #cbd5e1; box-sizing: border-box;">
+                <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+                    🎁 소중한 이용후기를 들려주세요!
+                </div>
+                <div style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 10px;">
+                    후기를 남겨주시면 다음 예약 때 사용 가능한 <strong>3만원 즉시 할인 쿠폰(WITHPRO30)</strong>을 바로 발급해 드립니다.
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 13px; font-weight: 600; color: #475569;">평점:</span>
+                    <div style="display: flex; gap: 6px; font-size: 22px; cursor: pointer;">
+                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 1)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
+                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 2)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
+                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 3)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
+                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 4)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
+                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 5)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
+                    </div>
+                </div>
+                <textarea id="review-text-${data.id}" placeholder="프로님과의 필드레슨은 만족스러우셨나요? 소중한 의견을 들려주세요 (최소 5자 이상)" style="width: 100%; height: 75px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 500; resize: none; box-sizing: border-box; margin-bottom: 8px; font-family: inherit; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
+                <button class="btn btn-primary" onclick="app.submitReview(${data.id})" style="width: 100%; padding: 10px; font-size: 13.5px; font-weight: 700; border-radius: 8px; background-color: var(--primary-color); border: none; color: white; cursor: pointer; transition: background-color 0.2s;">후기 등록하고 3만원 쿠폰받기</button>
+            </div>
+        `;
+    },
+
+    reviewRatings: {},
+    setReviewRating: function(id, rating) {
+        app.reviewRatings[id] = rating;
+        const card = document.getElementById(`review-form-${id}`);
+        if (!card) return;
+        const stars = card.querySelectorAll('.star-item');
+        stars.forEach((star, idx) => {
+            if (idx < rating) {
+                star.style.color = '#fbbf24';
+            } else {
+                star.style.color = '#d1d5db';
+            }
+        });
+    },
+
+    submitReview: async function(bookingId) {
+        const textInput = document.getElementById(`review-text-${bookingId}`);
+        if (!textInput) return;
+        
+        const reviewText = textInput.value.trim();
+        if (reviewText.length < 5) {
+            alert("후기 내용을 최소 5자 이상 입력해 주세요.");
+            textInput.focus();
+            return;
+        }
+        
+        const rating = app.reviewRatings[bookingId] || 5;
+        
+        try {
+            const response = await fetch('/api/lesson/submit-review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: bookingId,
+                    review_text: reviewText,
+                    review_rating: rating
+                })
+            });
+            
+            const resData = await response.json();
+            if (!response.ok) {
+                alert(`오류: ${resData.error || '후기 등록 실패'}`);
+                return;
+            }
+            
+            alert("소중한 후기가 등록되었습니다! 3만원 할인 쿠폰이 발급되었습니다.");
+            
+            const reqIdParam = new URLSearchParams(window.location.search).get('id');
+            if (reqIdParam && reqIdParam == bookingId) {
+                app.loadBookingDirectly(bookingId);
+            } else {
+                if (app.verifiedUserName && app.verifiedUserContact) {
+                    const nameInput = document.getElementById('lookup-user-name');
+                    const contactInput = document.getElementById('lookup-user-contact');
+                    if (nameInput) nameInput.value = app.verifiedUserName;
+                    if (contactInput) contactInput.value = app.verifiedUserContact;
+                    app.lookupMyBookings();
+                } else {
+                    location.reload();
+                }
+            }
+        } catch (e) {
+            alert("서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+        }
     }
 };
 

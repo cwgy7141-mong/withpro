@@ -134,6 +134,30 @@ def init_db():
         c.execute("ALTER TABLE lesson_requests ADD COLUMN review_notified INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
         pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN coupon_code TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN discount_amount INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN paid_amount INTEGER DEFAULT 50000")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN review_text TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN review_rating INTEGER")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN reviewed_at TEXT")
+    except sqlite3.OperationalError:
+        pass
         
     conn.commit()
     conn.close()
@@ -545,9 +569,9 @@ def check_pro_commissions():
                 pro_name = row['pro_name'] if row['pro_name'] else "배정 프로"
 
                 if user_contact:
-                    title = "📢 [withPRO] 라운딩 이용 후기 및 피드백 조사"
-                    body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩이 어떠셨는지 이 채팅방에 직접 답장으로 소중한 후기와 피드백을 편하게 들려주세요! 더 나은 서비스 제공을 위해 큰 힘이 됩니다."
-                    customer_link = "https://withpro.life/index.html?view=my-bookings"
+                    title = "🎁 [withPRO] 라운딩 후기 작성 시 3만원 쿠폰 증정"
+                    customer_link = f"https://withpro.life/index.html?view=my-bookings&id={req_id}"
+                    body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩 후기를 아래 링크에서 남겨주시면 다음 이용 시 사용 가능한 3만원 즉시 할인 쿠폰(WITHPRO30)을 바로 발급해 드립니다!\n후기 작성하기: {customer_link}"
                     dispatch_push_notification(user_contact, title, body, customer_link, template_type="amateur_review_request")
                     c.execute("UPDATE lesson_requests SET review_notified = 1 WHERE id = ?", (req_id,))
 
@@ -1138,6 +1162,135 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 self.end_headers()
                 self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
+        elif parsed_path.path == '/api/coupon/validate':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+            
+            code = data.get('code', '').strip().upper()
+            contact = data.get('contact', '').strip()
+            
+            if not code or not contact:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': '쿠폰 코드와 연락처 정보가 필요합니다.'}).encode('utf-8'))
+                return
+                
+            ACTIVE_COUPONS = {"WITHPRO30": 30000}
+            
+            if code not in ACTIVE_COUPONS:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': '유효하지 않은 쿠폰 코드입니다.'}).encode('utf-8'))
+                return
+                
+            discount_amount = ACTIVE_COUPONS[code]
+            
+            def clean_phone(phone_str):
+                return "".join([ch for ch in phone_str if ch.isdigit()])
+                
+            clean_input_contact = clean_phone(contact)
+            if not clean_input_contact:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': '유효하지 않은 연락처 형식입니다.'}).encode('utf-8'))
+                return
+                
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                conn.row_factory = sqlite3.Row
+                c = conn.cursor()
+                
+                c.execute("SELECT user_contact FROM lesson_requests WHERE status = '결제완료' AND coupon_code = ?", (code,))
+                rows = c.fetchall()
+                conn.close()
+                
+                already_used = False
+                for r in rows:
+                    if r['user_contact'] and clean_phone(r['user_contact']) == clean_input_contact:
+                        already_used = True
+                        break
+                        
+                if already_used:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': '이미 해당 쿠폰을 사용하셨습니다. (1인 1회 제한)'}).encode('utf-8'))
+                    return
+                    
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'coupon_code': code,
+                    'discount_amount': discount_amount
+                }).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': f'서버 내부 오류: {str(e)}'}).encode('utf-8'))
+            return
+
+        elif parsed_path.path == '/api/lesson/submit-review':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+            req_id = data.get('id')
+            review_text = data.get('review_text', '').strip()
+            review_rating = data.get('review_rating', 5)
+            
+            if not req_id or not review_text:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': '필수 입력 항목(ID, 후기 내용)이 누락되었습니다.'}).encode('utf-8'))
+                return
+                
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                conn.row_factory = sqlite3.Row
+                c = conn.cursor()
+                
+                c.execute("""
+                    UPDATE lesson_requests 
+                    SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime')
+                    WHERE id = ?
+                """, (review_text, review_rating, req_id))
+                
+                c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
+                row = c.fetchone()
+                
+                conn.commit()
+                conn.close()
+                
+                if row:
+                    send_discord_notification("✍️ 새로운 아마추어 라운딩 후기 등록", {
+                        "고객명": row['user_name'] if row['user_name'] else "아마추어",
+                        "골프장": row['golf_course'],
+                        "평점": f"{'★' * review_rating}{'☆' * (5 - review_rating)} ({review_rating}점)",
+                        "후기 내용": review_text
+                    })
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'message': '후기가 성공적으로 등록되었습니다. 3만원 할인 쿠폰(WITHPRO30)이 발급되었습니다.',
+                    'coupon_code': 'WITHPRO30'
+                }).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': f'서버 내부 오류: {str(e)}'}).encode('utf-8'))
+            return
+
         elif parsed_path.path == '/api/lesson/payment-complete':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -1155,8 +1308,18 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 conn = sqlite3.connect(DB_NAME)
                 conn.row_factory = sqlite3.Row
                 c = conn.cursor()
-                # 결제 수단 및 포트원 결제번호(imp_uid) 저장
-                c.execute("UPDATE lesson_requests SET status = '결제완료', pay_method = ?, imp_uid = ? WHERE id = ?", (data.get('pay_method'), data.get('imp_uid'), req_id))
+                
+                coupon_code = data.get('coupon_code')
+                discount_amount = data.get('discount_amount', 0)
+                paid_amount = data.get('paid_amount', 50000)
+                
+                c.execute("""
+                    UPDATE lesson_requests 
+                    SET status = '결제완료', pay_method = ?, imp_uid = ?,
+                        coupon_code = ?, discount_amount = ?, paid_amount = ?
+                    WHERE id = ?
+                """, (data.get('pay_method'), data.get('imp_uid'), coupon_code, discount_amount, paid_amount, req_id))
+                
                 c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
                 row = c.fetchone()
                 
@@ -1169,19 +1332,25 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 conn.close()
                 
                 if row:
-                    # 디스코드 알림 발송
+                    paid_val = row['paid_amount'] if row['paid_amount'] is not None else 50000
+                    disc_val = row['discount_amount'] if row['discount_amount'] is not None else 0
+                    coup_val = row['coupon_code']
+                    
+                    price_text = f"{paid_val:,}원"
+                    if coup_val:
+                        price_text += f" (쿠폰 적용: {coup_val} -{disc_val:,}원 할인)"
+                        
                     fields = {
                         "골프장": row['golf_course'],
                         "라운딩 날짜": row['lesson_date'],
                         "티오프 시간": row['lesson_time'],
-                        "결제 금액": "50,000원",
+                        "결제 금액": price_text,
                         "결제 수단": row['pay_method'] if row['pay_method'] else "간편결제",
                         "포트원 거래번호": row['imp_uid'] if row['imp_uid'] else "시뮬레이션",
                         "매칭 상태": "결제 완료 (최종 확정)"
                     }
                     send_discord_notification("💰 필드레슨 예약금 결제 완료 (최종 확정)", fields)
                     
-                    # 프로에게 매칭 최종 확정 안내 (신청인 이름 & 연락처 포함) 앱 PUSH 전송
                     if pro_row and pro_row['contact']:
                         pro_name = pro_row['name'] if pro_row['name'] else "프로"
                         customer_name = row['user_name'] if row['user_name'] else "아마추어 고객"
