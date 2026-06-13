@@ -546,7 +546,7 @@ def check_pro_commissions():
 
                 if user_contact:
                     title = "📢 [withPRO] 라운딩 이용 후기 및 피드백 조사"
-                    body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩이 어떠셨는지 소중한 후기와 피드백을 들려주세요. 더 나은 서비스 제공을 위해 큰 힘이 됩니다!"
+                    body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩이 어떠셨는지 이 채팅방에 직접 답장으로 소중한 후기와 피드백을 편하게 들려주세요! 더 나은 서비스 제공을 위해 큰 힘이 됩니다."
                     customer_link = "https://withpro.life/index.html?view=my-bookings"
                     dispatch_push_notification(user_contact, title, body, customer_link, template_type="amateur_review_request")
                     c.execute("UPDATE lesson_requests SET review_notified = 1 WHERE id = ?", (req_id,))
