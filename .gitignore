@@ -18,3 +18,14 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Android build files
+android-app/build/
+android-app/*/build/
+android-app/.gradle/
+android-app/local.properties
+
+# Keystore files
+*.jks
+*.keystore
+

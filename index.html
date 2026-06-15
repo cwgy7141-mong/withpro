@@ -59,6 +59,11 @@
                         <span class="status-link-text">내 예약 및 실시간 결제 현황 확인</span>
                         <span class="status-link-chevron">→</span>
                     </button>
+                    <div style="text-align: center; margin-top: 15px; margin-bottom: 5px;">
+                        <a href="#" onclick="event.preventDefault(); app.navigate('view-amateur-guide')" style="color: var(--primary-color) !important; font-weight: 700; text-decoration: underline; font-size: 13.5px; display: inline-block;">
+                            ⛳ 회원 활동 가이드 알아보기 →
+                        </a>
+                    </div>
                 </div>
 
                 <!-- 2. 레슨 프로용 카드 섹션 (숨김) -->
@@ -112,6 +117,11 @@
                 <div class="form-header-center">
                     <img src="logo.svg" alt="withPRO" class="small-logo">
                     <p class="subtitle">예약하신 라운딩 정보를 입력하시면<br>최적의 필드레슨 프로를 매칭해 드립니다.</p>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <a href="#" onclick="event.preventDefault(); app.navigate('view-amateur-guide')" style="color: var(--primary-color) !important; font-weight: 700; text-decoration: underline; font-size: 13px; display: inline-block;">
+                            ⛳ 회원 활동 가이드 알아보기 →
+                        </a>
+                    </div>
                 </div>
 
                 <!-- 신청자 이름 카드 -->
@@ -415,7 +425,13 @@
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
                 <h2>프로 활동 가이드</h2>
-                <div class="placeholder-icon"></div>
+                <button class="icon-btn" onclick="app.downloadGuide('pro')" title="가이드 다운로드">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
             </header>
             <div class="content scrollable">
                 
@@ -520,6 +536,117 @@
                             <h4 class="guide-reward-title">우수 프로 인증 배지 부여</h4>
                         </div>
                         <p class="guide-reward-desc">누적 라운딩 매칭 횟수와 회원 만족도 평점을 기준으로 선정합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 회원 활동 가이드 화면 -->
+        <div id="view-amateur-guide" class="view">
+            <header class="header">
+                <button class="icon-btn" onclick="app.navigate('view-home')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h2>회원 활동 가이드</h2>
+                <button class="icon-btn" onclick="app.downloadGuide('amateur')" title="가이드 다운로드">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+            </header>
+            <div class="content scrollable">
+                
+                <!-- 웰컴 배너 -->
+                <div class="guide-welcome-card" style="background: linear-gradient(135deg, #0b3621 0%, #059669 100%);">
+                    <span class="guide-welcome-badge" style="background: rgba(255, 255, 255, 0.2);">withPRO Member</span>
+                    <h3 class="guide-welcome-title">회원님, 반갑습니다! 🏌️‍♂️</h3>
+                    <p class="guide-welcome-desc">KPGA / KLPGA 공인 프로와 동반 라운딩하며, 원포인트 밀착 레슨을 받고 실력을 한 단계 업그레이드해 보세요.</p>
+                </div>
+
+                <!-- 1. 서비스 이용 방법 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>📱</span> 서비스 이용 방법
+                    </div>
+                    <div class="guide-step-list">
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 1</div>
+                            <h4 class="guide-step-title">라운딩 매칭 신청</h4>
+                            <p class="guide-step-desc">원하는 날짜, 라운딩할 골프장, 티오프 시간을 선택하고 예약자 이름과 연락처를 입력하여 간편하게 매칭을 신청합니다.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 2</div>
+                            <h4 class="guide-step-title">프로님 배정 및 매칭 대기</h4>
+                            <p class="guide-step-desc">운영진이 회원님의 일정과 활동 구장을 고려하여 가장 적합한 프로님을 1:1로 직접 배정하고 제안을 전달합니다.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 3</div>
+                            <h4 class="guide-step-title">매칭 완료 및 예약금 결제</h4>
+                            <p class="guide-step-desc">배정된 프로님이 매칭 제안을 수락하면 안내 알림이 발송됩니다. 예약을 최종 확정하기 위해 예약금 5만 원을 결제합니다.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <div class="guide-step-num">Step 4</div>
+                            <h4 class="guide-step-title">고품격 필드 레슨 진행</h4>
+                            <p class="guide-step-desc">약속한 골프장으로 출동하여 프로와 만나 18홀 라운딩을 동반하며 밀착 1:1 현장 코칭을 받습니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 레슨비 및 예약금 안내 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>💰</span> 레슨비 및 예약금 안내
+                    </div>
+                    <div class="guide-grid-2">
+                        <div class="guide-icon-card">
+                            <div class="guide-card-icon-wrapper" style="background-color: #e6f4ea; color: #137333;">💸</div>
+                            <h4 class="guide-card-title">현장 직거래 정산</h4>
+                            <div class="guide-card-price" style="font-size: 16px; font-weight: 800; color: #137333; margin-bottom: 6px;">50만 원</div>
+                            <p class="guide-card-desc">수수료 0원으로, 라운딩이 끝난 후 프로님께 레슨비 50만 원을 직접 송금/정산해 주세요.</p>
+                        </div>
+                        <div class="guide-icon-card">
+                            <div class="guide-card-icon-wrapper" style="background-color: #e8f0fe; color: #1a73e8;">🛡️</div>
+                            <h4 class="guide-card-title">안전 예약금</h4>
+                            <div class="guide-card-price" style="font-size: 16px; font-weight: 800; color: #1a73e8; margin-bottom: 6px;">5만 원 결제</div>
+                            <p class="guide-card-desc">매칭 시 선결제되는 예약금은 매칭의 신뢰를 약속하고 예기치 못한 취소를 예방하기 위한 안전장치입니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 아마추어 골퍼 매너 가이드 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>🤝</span> 아마추어 골퍼 매너 가이드
+                    </div>
+                    <div class="guide-step-list">
+                        <div class="guide-step-card">
+                            <h4 class="guide-step-title">⏰ 티오프 시간 엄수</h4>
+                            <p class="guide-step-desc">프로님과 충분히 인사를 나누고 가벼운 웜업을 진행할 수 있도록 티오프 최소 30분 전까지 골프장에 도착해 주세요.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <h4 class="guide-step-title">🎯 레슨 니즈의 사전 소통</h4>
+                            <p class="guide-step-desc">라운딩 시작 전에 드라이버, 아이언, 숏게임, 코스 매니지먼트 등 특별히 집중 코칭받고 싶은 고민을 프로님께 말씀해 주세요.</p>
+                        </div>
+                        <div class="guide-step-card">
+                            <h4 class="guide-step-title">👔 매너 및 드레스코드 준수</h4>
+                            <p class="guide-step-desc">골프장의 복장 및 기본 에티켓을 준수하여, 상호 존중 속에서 품격 있고 즐거운 18홀 라운딩 문화를 만들어갑니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 회원 활동 혜택 -->
+                <div class="guide-section">
+                    <div class="guide-section-header">
+                        <span>🏆</span> 회원 활동 혜택
+                    </div>
+                    <div class="guide-reward-banner" style="background-color: #ecfdf5; border-color: rgba(16, 185, 129, 0.2);">
+                        <div class="guide-reward-header">
+                            <span class="guide-reward-badge" style="background-color: #059669;">1:1 맞춤 피드백</span>
+                            <h4 class="guide-reward-title" style="color: #065f46;">KPGA / KLPGA 공인 프로의 레슨</h4>
+                        </div>
+                        <p class="guide-reward-desc" style="color: #065f46;">국내 공인 자격을 획득한 정회원 프로들의 필드 공략 비결과 숏게임 노하우를 한 라운드 동안 바로 내 스윙에 맞게 전수받을 수 있습니다.</p>
                     </div>
                 </div>
             </div>

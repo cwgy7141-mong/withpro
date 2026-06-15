@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.cwgy.withpro'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.cwgy.withpro"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            // We reference the keystore file that will be generated inside the android-app/ directory.
+            storeFile file("../withpro-release-key.jks")
+            storePassword "withpro123"
+            keyAlias "withpro-key"
+            keyPassword "withpro123"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+}

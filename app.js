@@ -334,6 +334,16 @@ const app = {
             }
         }
     },
+
+    downloadGuide: function(type) {
+        const filename = type === 'pro' ? 'withpro_pro_guide_app_mockup.png' : 'withpro_amateur_guide.png';
+        const link = document.createElement('a');
+        link.href = '/' + filename;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    },
     
     switchHomeTab: function(tabId) {
         // 1. 모든 탭 버튼에서 active 클래스 제거
