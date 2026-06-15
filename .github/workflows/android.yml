@@ -5,7 +5,10 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -24,8 +27,6 @@ jobs:
       - name: Generate Release Keystore
         run: |
           cd android-app
-          # Generate the keystore only if it doesn't exist.
-          # We use the same passwords and alias configured in app/build.gradle
           if [ ! -f withpro-release-key.jks ]; then
             echo "Generating new release keystore..."
             keytool -genkey -v -keystore withpro-release-key.jks \
@@ -44,7 +45,6 @@ jobs:
       - name: Initialize Gradle Wrapper and Build Release Bundle (AAB)
         run: |
           cd android-app
-          # Generate wrapper dynamically so we don't have to check it into Git
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew bundleRelease
@@ -60,3 +60,20 @@ jobs:
         with:
           name: withpro-release-keystore
           path: android-app/withpro-release-key.jks
+
+      - name: Push Build Artifacts to Builds Branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          mkdir dist
+          cp android-app/app/build/outputs/bundle/release/app-release.aab dist/
+          cp android-app/withpro-release-key.jks dist/
+          
+          cd dist
+          git init
+          git checkout -b builds
+          git add .
+          git commit -m "Build artifacts for commit ${{ github.sha }}"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -f origin builds
