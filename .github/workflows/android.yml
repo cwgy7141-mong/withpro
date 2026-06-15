@@ -43,11 +43,34 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Initialize Gradle Wrapper and Build Release Bundle (AAB)
+        id: build_step
         run: |
           cd android-app
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
-          ./gradlew bundleRelease
+          # Run build and save output to log
+          ./gradlew bundleRelease > build.log 2>&1
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          mkdir -p dist
+          cp android-app/build.log dist/ || echo "No build.log found"
+          
+          cd dist
+          git init
+          git checkout -b builds
+          git add .
+          git commit -m "Build failed: Log upload"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -f origin builds
+          
+          echo "=== BUILD LOG ==="
+          cat ../android-app/build.log
+          exit 1
 
       - name: Upload Signed AAB (Android App Bundle)
         uses: actions/upload-artifact@v4
@@ -66,7 +89,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          mkdir dist
+          mkdir -p dist
           cp android-app/app/build/outputs/bundle/release/app-release.aab dist/
           cp android-app/withpro-release-key.jks dist/
           
