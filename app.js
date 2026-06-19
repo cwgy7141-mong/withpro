@@ -790,7 +790,7 @@ const app = {
                     <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; margin: 0;">
                         <div class="booking-badge-row">
                             <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
-                            <span class="booking-status-tag matched">결제 대기중</span>
+                            <span class="booking-status-tag paid">매칭 완료</span>
                         </div>
                         <ul class="booking-details-list">
                             <li class="booking-detail-item">
@@ -798,14 +798,17 @@ const app = {
                                 <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
                             </li>
                             <li class="booking-detail-item">
-                                <span class="booking-detail-label">보증금</span>
-                                <span class="booking-detail-value" style="color: #0064FF; font-weight: 800;">50,000원</span>
+                                <span class="booking-detail-label">정산 방식</span>
+                                <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (55만 원)</span>
                             </li>
                         </ul>
-                        <button class="btn btn-primary full-width animate-pulse" style="background-color: #0064FF; color: white; border: none; font-size: 15px; box-shadow: 0 4px 15px rgba(0, 100, 255, 0.15);" onclick="app.openPaymentView(${data.id})">예약금 결제하기</button>
+                        <div style="font-size: 13px; color: #065f46; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center; font-weight: 600;">
+                            프로 수락 시 예약이 즉시 최종 확정됩니다.
+                        </div>
                     </div>
                 `;
             } else if (status === '결제완료') {
+                const isDirect = data.pay_method === '현장직거래';
                 cardHtml = `
                     <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; border-color: #a7f3d0; background: linear-gradient(180deg, #FCFDFD 0%, #FFFFFF 100%); margin: 0;">
                         <div class="booking-badge-row">
@@ -813,7 +816,7 @@ const app = {
                             <span class="booking-status-tag paid">예약 완료</span>
                         </div>
                         <p style="font-size: 13.5px; color: #065f46; line-height: 1.5; margin-bottom: 12px; font-weight: 600; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center;">
-                            🎉 예약금 결제가 정상 승인되어 최종 확정되었습니다!
+                            ${isDirect ? '🎉 프로님이 예약을 수락하여 매칭이 최종 확정되었습니다!' : '🎉 예약금 결제가 정상 승인되어 최종 확정되었습니다!'}
                         </p>
                         <ul class="booking-details-list">
                             <li class="booking-detail-item">
@@ -821,8 +824,8 @@ const app = {
                                 <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
                             </li>
                             <li class="booking-detail-item">
-                                <span class="booking-detail-label">결제 수단</span>
-                                <span class="booking-detail-value">${app.escapeHtml(data.pay_method || '간편결제')}</span>
+                                <span class="booking-detail-label">${isDirect ? '정산 방식' : '결제 수단'}</span>
+                                <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 550,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
                             </li>
                         </ul>
                         ${app.getReviewSectionHtml(data)}
@@ -1018,7 +1021,7 @@ const app = {
                         <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; margin: 0;">
                             <div class="booking-badge-row">
                                 <span class="booking-title">${app.escapeHtml(data.golf_course)}</span>
-                                <span class="booking-status-tag matched">결제 대기중</span>
+                                <span class="booking-status-tag paid">매칭 완료</span>
                             </div>
                             <ul class="booking-details-list">
                                 <li class="booking-detail-item">
@@ -1026,14 +1029,17 @@ const app = {
                                     <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
                                 </li>
                                 <li class="booking-detail-item">
-                                    <span class="booking-detail-label">보증금</span>
-                                    <span class="booking-detail-value" style="color: #0064FF; font-weight: 800;">50,000원</span>
+                                    <span class="booking-detail-label">정산 방식</span>
+                                    <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (55만 원)</span>
                                 </li>
                             </ul>
-                            <button class="btn btn-primary full-width animate-pulse" style="background-color: #0064FF; color: white; border: none; font-size: 15px; box-shadow: 0 4px 15px rgba(0, 100, 255, 0.15);" onclick="app.openPaymentView(${data.id})">예약금 결제하기</button>
+                            <div style="font-size: 13px; color: #065f46; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center; font-weight: 600;">
+                                프로 수락 시 예약이 즉시 최종 확정됩니다.
+                            </div>
                         </div>
                     `;
                 } else if (status === '결제완료') {
+                    const isDirect = data.pay_method === '현장직거래';
                     cardHtml = `
                         <div class="my-booking-card" style="width: 100%; text-align: left; box-sizing: border-box; border-color: #a7f3d0; background: linear-gradient(180deg, #FCFDFD 0%, #FFFFFF 100%); margin: 0;">
                             <div class="booking-badge-row">
@@ -1041,7 +1047,7 @@ const app = {
                                 <span class="booking-status-tag paid">예약 완료</span>
                             </div>
                             <p style="font-size: 13.5px; color: #065f46; line-height: 1.5; margin-bottom: 12px; font-weight: 600; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center;">
-                                🎉 예약금 결제가 정상 승인되어 최종 확정되었습니다!
+                                ${isDirect ? '🎉 프로님이 예약을 수락하여 매칭이 최종 확정되었습니다!' : '🎉 예약금 결제가 정상 승인되어 최종 확정되었습니다!'}
                             </p>
                             <ul class="booking-details-list">
                                 <li class="booking-detail-item">
@@ -1049,8 +1055,8 @@ const app = {
                                     <span class="booking-detail-value">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
                                 </li>
                                 <li class="booking-detail-item">
-                                    <span class="booking-detail-label">결제 수단</span>
-                                    <span class="booking-detail-value">${app.escapeHtml(data.pay_method || '간편결제')}</span>
+                                    <span class="booking-detail-label">${isDirect ? '정산 방식' : '결제 수단'}</span>
+                                    <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 550,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
                                 </li>
                             </ul>
                             ${app.getReviewSectionHtml(data)}
@@ -1249,7 +1255,7 @@ const app = {
             pg: pgProvider,
             pay_method: payMethodCode,
             merchant_uid: merchantUid,
-            name: "withPRO 필드레슨 예약 보증금",
+            name: "withPRO 필드레슨 서비스 이용료",
             amount: amount,
             buyer_name: booking.user_name,
             buyer_tel: booking.user_contact,
@@ -1284,7 +1290,7 @@ const app = {
                     // 성공 팝업 결제 수단 및 금액 명시
                     const successSubtitle = document.querySelector('#payment-success-overlay .success-subtitle');
                     if (successSubtitle) {
-                        successSubtitle.innerHTML = `${amount.toLocaleString()}원 예약금이 <strong>${app.escapeHtml(payMethodText)}</strong>으로 성공적으로 수납되었습니다.<br>필드레슨 매칭이 최종 확정되었습니다.`;
+                        successSubtitle.innerHTML = `${amount.toLocaleString()}원 이용료 결제가 <strong>${app.escapeHtml(payMethodText)}</strong>으로 성공적으로 처리되었습니다.<br>필드레슨 매칭이 최종 확정되었습니다.`;
                     }
                     
                     document.getElementById('payment-success-overlay').classList.add('active');
@@ -1819,13 +1825,13 @@ const app = {
                             </li>
                             <li class="booking-detail-item" style="margin-bottom: 0;">
                                 <span class="booking-detail-label">현장 정산 레슨비</span>
-                                <span class="booking-detail-value" style="color: var(--accent-color); font-weight: 700; font-size: 16px;">500,000원</span>
+                                <span class="booking-detail-value" style="color: var(--accent-color); font-weight: 700; font-size: 16px;">550,000원</span>
                             </li>
                         </ul>
                     </div>
 
                     <div style="font-size: 13.5px; color: var(--text-sub); line-height: 1.5; padding: 12px; border-radius: 8px; background-color: var(--input-bg); margin-bottom: 24px; font-weight: 500;">
-                        💡 <strong>알아두세요:</strong> 프로 수락 후 아마추어 고객이 예약금을 입금하면 매칭이 최종 확정됩니다. 코스 내 프로님 제반 비용(그린피/카트비/캐디피)은 고객 전액 부담 조건입니다.
+                        💡 <strong>알아두세요:</strong> 프로 수락 즉시 매칭이 최종 확정(예약 완료)됩니다. 레슨비(55만 원)는 라운딩 종료 후 현장에서 직접 정산받으시며, 코스 내 프로님 제반 비용(그린피/카트비/캐디피)은 고객 전액 부담 조건입니다.
                     </div>
 
                     <div class="grid-2 gap-2" style="display: flex; gap: 10px;">
@@ -1865,7 +1871,7 @@ const app = {
                         <h3 class="overlay-title" style="margin-bottom: 12px; font-size: 22px; color: var(--primary-color);">매칭 제안 수락 완료!</h3>
                         <p class="overlay-subtitle" style="margin-bottom: 30px; font-size: 15px; line-height: 1.5;">
                             필드레슨 매칭 수락이 정상적으로 완료되었습니다.<br>
-                            아마추어 고객이 <strong>예약금 결제를 완료하면 예약이 최종 확정</strong>되며, 확정 시 마이페이지 배정 내역에서 실시간 확인 및 SMS 안내가 추가 발송됩니다.
+                            매칭이 <strong>최종 확정</strong>되었습니다. 마이페이지 배정 내역에서 실시간 상태를 확인하실 수 있으며, 고객님께 매칭 확정 안내 SMS가 즉시 발송되었습니다.
                         </p>
                         <button class="btn btn-primary" style="background-color: var(--primary-color); border: none; padding: 12px 30px; border-radius: 8px; color: white;" onclick="app.navigate('view-home')">홈으로 이동</button>
                     </div>

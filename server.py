@@ -504,6 +504,7 @@ def check_pro_commissions():
             kst = datetime.timezone(datetime.timedelta(hours=9))
             now_kst = datetime.datetime.now(kst)
             today_str = now_kst.strftime("%Y-%m-%d")
+            yesterday_str = (now_kst - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
             conn = sqlite3.connect(DB_NAME)
             conn.row_factory = sqlite3.Row
@@ -531,17 +532,17 @@ def check_pro_commissions():
                 lesson_date = row['lesson_date']
                 pro_notified = row['pro_notified'] if row['pro_notified'] is not None else 0
 
-                # A. 라운딩 당일 -> 결제 안내 (pro_notified가 0인 미알림 상태일 때)
-                if lesson_date == today_str:
+                # A. 라운딩 다음날 -> 결제 안내 (pro_notified가 0인 미알림 상태일 때)
+                if lesson_date == yesterday_str:
                     if pro_notified == 0:
                         title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
-                        body = f"[withPRO] {pro_name} 프로님, 오늘 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 다음날인 내일까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 마이페이지에서 결제를 진행해 주세요."
+                        body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 마이페이지에서 결제를 진행해 주세요."
                         pro_link = "https://withpro.life/index.html?view=pro-mypage"
                         dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_payment_request")
                         c.execute("UPDATE lesson_requests SET pro_notified = 1 WHERE id = ?", (req_id,))
 
-                # B. 라운딩 다음날 이후 -> 미납 정지 처리 및 안내 (최종 정지 알림 단계인 2 미만일 때)
-                elif lesson_date < today_str:
+                # B. 라운딩 이틀 뒤 또는 그 이후 -> 미납 정지 처리 및 안내 (최종 정지 알림 단계인 2 미만일 때)
+                elif lesson_date < yesterday_str:
                     if pro_notified < 2:
                         # 1. 프로 상태 '정지'로 변경
                         if row['pro_status'] != '정지':
@@ -550,12 +551,12 @@ def check_pro_commissions():
                                 "프로명": pro_name,
                                 "연락처": pro_contact,
                                 "미납 라운딩": f"{golf_course} ({lesson_date})",
-                                "사유": "라운딩 다음 날 수수료(5만원) 미납으로 인한 정지"
+                                "사유": "라운딩 이틀 뒤 수수료(5만원) 미납으로 인한 정지"
                             })
 
                         # 2. 미납 정지 알림 발송
                         title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
-                        body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 다음날인 오늘까지 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 되지 않으면 파트너 프로로서 정지(활동 정지 및 매칭 배정 불가) 상태가 유지됩니다. 마이페이지에서 결제를 완료하시면 즉시 정지가 해제됩니다."
+                        body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 마이페이지에서 결제를 완료하시면 즉시 정지가 해제됩니다."
                         pro_link = "https://withpro.life/index.html?view=pro-mypage"
                         dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
                         c.execute("UPDATE lesson_requests SET pro_notified = 2 WHERE id = ?", (req_id,))
@@ -1007,7 +1008,11 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 c = conn.cursor()
                 
                 if accept:
-                    c.execute("UPDATE lesson_requests SET status = '매칭완료' WHERE id = ? AND matched_pro_id = ?", (req_id, pro_id))
+                    c.execute("""
+                        UPDATE lesson_requests 
+                        SET status = '결제완료', pay_method = '현장직거래', paid_amount = 0 
+                        WHERE id = ? AND matched_pro_id = ?
+                    """, (req_id, pro_id))
                     
                     c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
                     row = c.fetchone()
@@ -1029,15 +1034,16 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                             "라운딩 날짜": row['lesson_date'],
                             "티오프 시간": row['lesson_time'],
                             "매칭 프로": f"{pro_name} (자격번호: {pro_cert})",
-                            "매칭 상태": "매칭 완료 (결제 대기중)",
-                            "예약금": "50,000원"
+                            "매칭 상태": "최종 확정 (현장 직거래)",
+                            "레슨비": "550,000원 (현장 직접 정산)",
+                            "플랫폼 수수료": "50,000원 (프로 사후 납부)"
                         }
-                        send_discord_notification("🏌️‍♂️ 필드레슨 프로 매칭 수락 완료 & 결제 대기", fields)
+                        send_discord_notification("🏌️‍♂️ 필드레슨 매칭 최종 확정 (현장 직거래)", fields)
                         
                         # 아마추어 고객 앱 PUSH 발송
                         pro_contact = pro_row['contact'] if pro_row else "-"
-                        customer_title = "🎉 필드레슨 프로 매칭 성공!"
-                        customer_body = f"[withPRO] '{row['golf_course']}' 필드레슨 프로 매칭이 성공적으로 완료되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n예약을 최종 확정하시려면 아래 예약금 결제(50,000원)를 완료해 주세요."
+                        customer_title = "🎉 필드레슨 매칭 최종 확정!"
+                        customer_body = f"[withPRO] '{row['golf_course']}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다."
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         customer_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={row['id']}"
@@ -1454,7 +1460,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         "포트원 거래번호": row['imp_uid'] if row['imp_uid'] else "시뮬레이션",
                         "매칭 상태": "결제 완료 (최종 확정)"
                     }
-                    send_discord_notification("💰 필드레슨 예약금 결제 완료 (최종 확정)", fields)
+                    send_discord_notification("💰 필드레슨 이용료 결제 완료 (최종 확정)", fields)
                     
                     if pro_row and pro_row['contact']:
                         pro_name = pro_row['name'] if pro_row['name'] else "프로"
