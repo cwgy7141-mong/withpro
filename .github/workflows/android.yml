@@ -93,6 +93,16 @@ jobs:
           cp android-app/app/build/outputs/bundle/release/app-release.aab dist/
           cp android-app/withpro-release-key.jks dist/
           
+          echo "=== Keystore Signatures ===" > dist/signatures.txt
+          if [ -d keystores ]; then
+            for f in keystores/*.jks; do
+              echo "--- $f ---" >> dist/signatures.txt
+              keytool -list -v -keystore "$f" -storepass withpro123 >> dist/signatures.txt 2>&1 || echo "failed to read $f" >> dist/signatures.txt
+            done
+          else
+            echo "No keystores directory found" >> dist/signatures.txt
+          fi
+          
           cd dist
           git init
           git checkout -b builds
