@@ -19,6 +19,26 @@ if hasattr(sys.stderr, 'reconfigure'):
     except Exception:
         pass
 
+# .env 파일 로드 함수 (외부 라이브러리 의존성 없이 로컬 .env 파일 파싱)
+def load_env():
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    if '=' in line:
+                        key, val = line.split('=', 1)
+                        key = key.strip()
+                        val = val.strip().strip('"').strip("'")
+                        os.environ[key] = val
+        except Exception as e:
+            print(f"[Warning] Failed to load .env file: {e}", flush=True)
+
+load_env()
+
 PORT = int(os.environ.get('PORT', 8000))
 DB_NAME = "withpro.db"
 
@@ -170,8 +190,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-# 디스코드 웹훅 알림 설정 (생성한 디스코드 웹훅 URL을 여기에 붙여넣으세요)
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1506978226092638208/hgh7I430irA_S4jy2AG9VCHDc44mKxTlsA-p2GBjM1y7o02qfyTcA_MsnBYh6RyqmTWA"
+# 디스코드 웹훅 알림 설정 (생성한 디스코드 웹훅 URL을 .env 파일에 입력하세요)
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
 # ==========================================
 # 📱 실제 SMS 및 카카오 알림톡 발송 연동 설정
@@ -179,14 +199,14 @@ DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1506978226092638208/hgh7
 # 실제 카카오 알림톡(실패 시 대체 문자 발송)을 전송받으시려면 아래 설정을 채워주세요.
 # 1. 알리고(Aligo) 이용 시: SMS_PROVIDER = "aligo" 로 설정 후 API 키, 아이디, 등록된 발신번호 입력
 # 2. 솔라피(Solapi) 이용 시: SMS_PROVIDER = "solapi" 로 설정 후 API 키, Secret 키, 등록된 발신번호 입력
-SMS_PROVIDER = "aligo"       # 'aligo', 'solapi', 'none' 중 선택
-SMS_API_KEY = "7y38cjghrwi6qvn5z2aoivu2cntcvu72"            # 알리고의 API key 또는 솔라피의 API key
-SMS_API_SECRET = ""         # 솔라피 이용 시에만 사용 (Secret Key)
-SMS_USER_ID = "cwgy71"            # 알리고 이용 시에만 사용 (알리고 ID)
-SMS_SENDER_NUMBER = "01041428686"      # KISA에 등록된 본인의 발신 전화번호 (예: '021234567' 또는 '01012345678')
+SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "none")       # 'aligo', 'solapi', 'none' 중 선택
+SMS_API_KEY = os.environ.get("SMS_API_KEY", "")            # 알리고의 API key 또는 솔라피의 API key
+SMS_API_SECRET = os.environ.get("SMS_API_SECRET", "")         # 솔라피 이용 시에만 사용 (Secret Key)
+SMS_USER_ID = os.environ.get("SMS_USER_ID", "")            # 알리고 이용 시에만 사용 (알리고 ID)
+SMS_SENDER_NUMBER = os.environ.get("SMS_SENDER_NUMBER", "")      # KISA에 등록된 본인의 발신 전화번호 (예: '021234567' 또는 '01012345678')
 
 # 카카오톡 비즈니스 채널 발신 프로필 키 (알리고의 senderkey 또는 솔라피의 pfId)
-KAKAO_SENDER_KEY = "02887bec62408a96f4135c5dfc72d4597c6b6e9b"       # 예: "a1b2c3d4e5f6..." (알리고) 또는 "KA01PF123456..." (솔라피)
+KAKAO_SENDER_KEY = os.environ.get("KAKAO_SENDER_KEY", "")       # 예: "a1b2c3d4e5f6..." (알리고) 또는 "KA01PF123456..." (솔라피)
 
 # 승인받은 알림톡 템플릿 코드 매핑 (본인의 알림톡 템플릿 코드에 맞게 설정하세요)
 KAKAO_TPL_LESSON_REQUESTED = "UI_6115"  # 레슨 신청 완료 알림 (예: "tpl_lesson_req")
@@ -503,6 +523,12 @@ def check_pro_commissions():
             # Get current date in KST (UTC+9)
             kst = datetime.timezone(datetime.timedelta(hours=9))
             now_kst = datetime.datetime.now(kst)
+
+            # 오전 9시 전에는 알림 발송을 진행하지 않음 (밤이나 새벽 시간대 스팸 방지)
+            if now_kst.hour < 9:
+                time.sleep(60)
+                continue
+
             today_str = now_kst.strftime("%Y-%m-%d")
             yesterday_str = (now_kst - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -514,7 +540,7 @@ def check_pro_commissions():
             # and the lesson_date is today or past (less than or equal to today_str)
             # and pro has not paid commission yet (pro_pay_status != '결제완료')
             c.execute("""
-                SELECT lr.*, pu.name as pro_name, pu.contact as pro_contact, pu.status as pro_status
+                SELECT lr.*, pu.name as pro_name, pu.contact as pro_contact, pu.status as pro_status, pu.cert_number as pro_cert
                 FROM lesson_requests lr
                 JOIN pro_users pu ON lr.matched_pro_id = pu.id
                 WHERE lr.status = '결제완료'
@@ -530,14 +556,15 @@ def check_pro_commissions():
                 pro_name = row['pro_name']
                 golf_course = row['golf_course']
                 lesson_date = row['lesson_date']
+                pro_cert = row['pro_cert'] if row['pro_cert'] else ""
                 pro_notified = row['pro_notified'] if row['pro_notified'] is not None else 0
 
                 # A. 라운딩 다음날 -> 결제 안내 (pro_notified가 0인 미알림 상태일 때)
                 if lesson_date == yesterday_str:
                     if pro_notified == 0:
                         title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
-                        body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 마이페이지에서 결제를 진행해 주세요."
-                        pro_link = "https://withpro.life/index.html?view=pro-mypage"
+                        body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
+                        pro_link = f"https://withpro.life/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
                         dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_payment_request")
                         c.execute("UPDATE lesson_requests SET pro_notified = 1 WHERE id = ?", (req_id,))
 
@@ -556,56 +583,13 @@ def check_pro_commissions():
 
                         # 2. 미납 정지 알림 발송
                         title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
-                        body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 마이페이지에서 결제를 완료하시면 즉시 정지가 해제됩니다."
-                        pro_link = "https://withpro.life/index.html?view=pro-mypage"
+                        body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
+                        pro_link = f"https://withpro.life/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
                         dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
                         c.execute("UPDATE lesson_requests SET pro_notified = 2 WHERE id = ?", (req_id,))
 
-            # 2. 아마추어 골퍼 라운딩 종료 다음날 이용후기 발송 대상 조회 (lesson_date < 어제/오늘 이고 review_notified가 0인 완료된 라운딩)
-            c.execute("""
-                SELECT lr.*, pu.name as pro_name
-                FROM lesson_requests lr
-                LEFT JOIN pro_users pu ON lr.matched_pro_id = pu.id
-                WHERE lr.status = '결제완료'
-                  AND lr.lesson_date < ?
-                  AND (lr.review_notified IS NULL OR lr.review_notified = 0)
-            """, (today_str,))
-            review_pending_lessons = c.fetchall()
-
-            for row in review_pending_lessons:
-                req_id = row['id']
-                user_contact = row['user_contact']
-                user_name = row['user_name'] if row['user_name'] else "아마추어 고객"
-                golf_course = row['golf_course']
-                lesson_date = row['lesson_date']
-                pro_name = row['pro_name'] if row['pro_name'] else "배정 프로"
-
-                if user_contact:
-                    def clean_phone(phone_str):
-                        return "".join([ch for ch in phone_str if ch.isdigit()])
-                    clean_target_contact = clean_phone(user_contact)
-                    
-                    c.execute("SELECT user_contact FROM lesson_requests WHERE issued_coupon_code = 'WITHPRO30'")
-                    all_issued_rows = c.fetchall()
-                    coupon_already_issued = False
-                    for r in all_issued_rows:
-                        if r['user_contact'] and clean_phone(r['user_contact']) == clean_target_contact:
-                            coupon_already_issued = True
-                            break
-                            
-                    customer_link = f"https://withpro.life/index.html?view=my-bookings&id={req_id}"
-                    
-                    if coupon_already_issued:
-                        title = "📢 [withPRO] 라운딩 이용 후기 및 피드백 조사"
-                        body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩이 어떠셨인지 아래 링크를 통해 소중한 후기와 피드백을 편하게 들려주세요! 더 나은 서비스 제공을 위해 큰 힘이 됩니다.\n후기 작성하기: {customer_link}"
-                        template_type = "amateur_review_request_without_coupon"
-                    else:
-                        title = "🎁 [withPRO] 라운딩 후기 작성 시 3만원 쿠폰 증정"
-                        body = f"[withPRO] {user_name}님, 어제 {lesson_date} {golf_course}에서 진행된 필드레슨은 만족스러우셨나요? {pro_name} 프로님과의 라운딩 후기를 아래 링크에서 남겨주시면 다음 이용 시 사용 가능한 3만원 즉시 할인 쿠폰(WITHPRO30)을 바로 발급해 드립니다!\n후기 작성하기: {customer_link}"
-                        template_type = "amateur_review_request_with_coupon"
-                        
-                    dispatch_push_notification(user_contact, title, body, customer_link, template_type=template_type)
-                    c.execute("UPDATE lesson_requests SET review_notified = 1 WHERE id = ?", (req_id,))
+            # 이용후기 발송 기능 제거됨
+            pass
 
             conn.commit()
             conn.close()
@@ -1219,165 +1203,17 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                 self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
         elif parsed_path.path == '/api/coupon/validate':
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode('utf-8'))
-            
-            code = data.get('code', '').strip().upper()
-            contact = data.get('contact', '').strip()
-            
-            if not code or not contact:
-                self.send_response(400)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': '쿠폰 코드와 연락처 정보가 필요합니다.'}).encode('utf-8'))
-                return
-                
-            ACTIVE_COUPONS = {"WITHPRO30": 30000}
-            
-            if code not in ACTIVE_COUPONS:
-                self.send_response(400)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': '유효하지 않은 쿠폰 코드입니다.'}).encode('utf-8'))
-                return
-                
-            discount_amount = ACTIVE_COUPONS[code]
-            
-            def clean_phone(phone_str):
-                return "".join([ch for ch in phone_str if ch.isdigit()])
-                
-            clean_input_contact = clean_phone(contact)
-            if not clean_input_contact:
-                self.send_response(400)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': '유효하지 않은 연락처 형식입니다.'}).encode('utf-8'))
-                return
-                
-            try:
-                conn = sqlite3.connect(DB_NAME)
-                conn.row_factory = sqlite3.Row
-                c = conn.cursor()
-                
-                # 후기 보상으로 발급받은 쿠폰 중 '사용가능'한 것이 있는지 확인
-                c.execute("SELECT id, user_contact FROM lesson_requests WHERE issued_coupon_code = ? AND issued_coupon_status = '사용가능'", (code,))
-                rows = c.fetchall()
-                conn.close()
-                
-                has_available_coupon = False
-                for r in rows:
-                    if r['user_contact'] and clean_phone(r['user_contact']) == clean_input_contact:
-                        has_available_coupon = True
-                        break
-                        
-                if not has_available_coupon:
-                    self.send_response(400)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({'error': '사용 가능한 후기 작성 할인 쿠폰이 없습니다.'}).encode('utf-8'))
-                    return
-                    
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({
-                    'status': 'success',
-                    'coupon_code': code,
-                    'discount_amount': discount_amount
-                }).encode('utf-8'))
-            except Exception as e:
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': f'서버 내부 오류: {str(e)}'}).encode('utf-8'))
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': '쿠폰 기능은 현재 지원하지 않습니다.'}).encode('utf-8'))
             return
 
         elif parsed_path.path == '/api/lesson/submit-review':
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode('utf-8'))
-            req_id = data.get('id')
-            review_text = data.get('review_text', '').strip()
-            review_rating = data.get('review_rating', 5)
-            
-            if not req_id or not review_text:
-                self.send_response(400)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': '필수 입력 항목(ID, 후기 내용)이 누락되었습니다.'}).encode('utf-8'))
-                return
-                
-            try:
-                conn = sqlite3.connect(DB_NAME)
-                conn.row_factory = sqlite3.Row
-                c = conn.cursor()
-                
-                c.execute("SELECT user_contact FROM lesson_requests WHERE id = ?", (req_id,))
-                curr = c.fetchone()
-                
-                coupon_already_issued = False
-                user_contact_clean = ""
-                
-                def clean_phone(phone_str):
-                    return "".join([ch for ch in phone_str if ch.isdigit()])
-                    
-                if curr and curr['user_contact']:
-                    user_contact_clean = clean_phone(curr['user_contact'])
-                    
-                    c.execute("SELECT user_contact FROM lesson_requests WHERE issued_coupon_code = 'WITHPRO30'")
-                    all_issued_rows = c.fetchall()
-                    for r in all_issued_rows:
-                        if r['user_contact'] and clean_phone(r['user_contact']) == user_contact_clean:
-                            coupon_already_issued = True
-                            break
-                
-                if coupon_already_issued:
-                    c.execute("""
-                        UPDATE lesson_requests 
-                        SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime')
-                        WHERE id = ?
-                    """, (review_text, review_rating, req_id))
-                    msg = "소중한 후기가 등록되었습니다. 참여해 주셔서 대단히 감사합니다!"
-                    issued_code = None
-                else:
-                    c.execute("""
-                        UPDATE lesson_requests 
-                        SET review_text = ?, review_rating = ?, reviewed_at = datetime('now', 'localtime'),
-                            issued_coupon_code = 'WITHPRO30', issued_coupon_status = '사용가능'
-                        WHERE id = ?
-                    """, (review_text, review_rating, req_id))
-                    msg = "후기가 성공적으로 등록되었습니다. 3만원 할인 쿠폰(WITHPRO30)이 발급되었습니다."
-                    issued_code = "WITHPRO30"
-                
-                c.execute("SELECT * FROM lesson_requests WHERE id = ?", (req_id,))
-                row = c.fetchone()
-                
-                conn.commit()
-                conn.close()
-                
-                if row:
-                    send_discord_notification("✍️ 새로운 아마추어 라운딩 후기 등록", {
-                        "고객명": row['user_name'] if row['user_name'] else "아마추어",
-                        "골프장": row['golf_course'],
-                        "평점": f"{'★' * review_rating}{'☆' * (5 - review_rating)} ({review_rating}점)",
-                        "후기 내용": review_text,
-                        "쿠폰 발급 여부": "발급 완료 (최초)" if not coupon_already_issued else "미발급 (이미 발급 이력 존재)"
-                    })
-                
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({
-                    'status': 'success',
-                    'message': msg,
-                    'coupon_code': issued_code
-                }).encode('utf-8'))
-            except Exception as e:
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': f'서버 내부 오류: {str(e)}'}).encode('utf-8'))
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': '후기 등록 기능은 현재 지원하지 않습니다.'}).encode('utf-8'))
             return
 
         elif parsed_path.path == '/api/lesson/payment-complete':

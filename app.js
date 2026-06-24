@@ -485,7 +485,7 @@ const app = {
         const reqIdParam = urlParams.get('id');
         const viewParam = urlParams.get('view');
         
-        if (reqIdParam && viewParam !== 'pro-accept') {
+        if (reqIdParam && viewParam !== 'pro-accept' && viewParam !== 'pro-pay-direct') {
             localStorage.setItem('withpro_last_request_id', reqIdParam);
         }
         
@@ -493,6 +493,14 @@ const app = {
             const proIdParam = urlParams.get('pro_id');
             if (reqIdParam && proIdParam) {
                 app.loadProAcceptView(reqIdParam, proIdParam);
+            } else {
+                app.navigate('view-home');
+            }
+        } else if (viewParam === 'pro-pay-direct') {
+            const certParam = urlParams.get('cert');
+            if (reqIdParam && certParam) {
+                localStorage.setItem('withpro_pro_cert', certParam);
+                app.loadProPayDirectView(reqIdParam, certParam);
             } else {
                 app.navigate('view-home');
             }
@@ -1596,10 +1604,10 @@ const app = {
                     } else if (match.status === '결제완료') {
                         statusBadge = `<span class="pro-match-status-badge paid">예약 완료 💰</span>`;
                         
-                        if (match.lesson_date < todayStr) {
-                            if (match.pro_pay_status === '결제완료') {
-                                statusBadge += `<span class="pro-match-status-badge paid" style="margin-left: 4px; background-color: #d1fae5; color: #065f46;">수수료 납부완료 ✅</span>`;
-                            } else {
+                        if (match.pro_pay_status === '결제완료') {
+                            statusBadge += `<span class="pro-match-status-badge paid" style="margin-left: 4px; background-color: #d1fae5; color: #065f46;">수수료 납부완료 ✅</span>`;
+                        } else {
+                            if (match.lesson_date < todayStr) {
                                 statusBadge += `<span class="pro-match-status-badge wait" style="margin-left: 4px; background-color: #fee2e2; color: #991b1b;">수수료 미납 🚨</span>`;
                                 actionButtonHtml = `
                                     <div style="margin-top: 12px; padding: 12px; background-color: #fff5f5; border: 1px solid #fee2e2; border-radius: 8px;">
@@ -1611,9 +1619,19 @@ const app = {
                                         </button>
                                     </div>
                                 `;
+                            } else {
+                                statusBadge += `<span class="pro-match-status-badge wait" style="margin-left: 4px; background-color: #f3f4f6; color: #4b5563;">수수료 납부대기 ⏳</span>`;
+                                actionButtonHtml = `
+                                    <div style="margin-top: 12px; padding: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+                                        <p style="font-size: 12px; color: #166534; font-weight: 700; margin: 0 0 8px 0; line-height: 1.4;">
+                                            ℹ️ 라운딩 예정 건입니다. 수수료를 미리 결제하실 수 있습니다.
+                                        </p>
+                                        <button class="btn btn-primary full-width" style="padding: 10px; font-size: 13px; background-color: var(--primary-color); border: none; font-weight: 700; width: 100%; box-sizing: border-box;" onclick="app.payProCommission(${match.id}, '${match.user_name || '골퍼'}')">
+                                            수수료 50,000원 결제하기
+                                        </button>
+                                    </div>
+                                `;
                             }
-                        } else {
-                            statusBadge += `<span class="pro-match-status-badge wait" style="margin-left: 4px; background-color: #f3f4f6; color: #4b5563;">수수료 납부대기 ⏳</span>`;
                         }
                     }
                     return `
@@ -1664,7 +1682,7 @@ const app = {
         return `${yyyy}-${mm}-${dd}`;
     },
 
-    payProCommission: async function(reqId, amateurName) {
+    payProCommission: async function(reqId, amateurName, certParam) {
         if (typeof IMP === 'undefined') {
             alert("결제 모듈이 아직 로드되지 않았습니다. 새로고침 후 다시 시도해 주세요.");
             return;
@@ -1673,13 +1691,9 @@ const app = {
         // Initialize IMP
         IMP.init("imp30206856");
         
-        const cert = localStorage.getItem('withpro_pro_cert');
+        const cert = certParam || localStorage.getItem('withpro_pro_cert');
         if (!cert) {
             alert("프로 로그인 정보가 만료되었습니다. 다시 로그인 해 주세요.");
-            return;
-        }
-        
-        if (!await window.withproConfirm(`필드레슨 수수료 50,000원을 결제하시겠습니까?\n결제가 완료되면 파트너 프로 정지 상태가 즉시 해제됩니다.`)) {
             return;
         }
         
@@ -1764,6 +1778,86 @@ const app = {
 
         } catch (e) {
             alert('서버 통신 중 오류가 발생했습니다.');
+        }
+    },
+
+    loadProPayDirectView: async function(reqId, cert) {
+        app.navigate('view-pro-pay-direct');
+        const container = document.getElementById('pro-pay-direct-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="matching-loading-box">
+                <div class="loading-spinner" style="border-top-color: var(--primary-color);"></div>
+                <p class="overlay-subtitle">결제 정보를 불러오는 중입니다...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch(`/api/lesson/status?id=${reqId}`);
+            if (!response.ok) {
+                throw new Error("정보를 찾을 수 없습니다.");
+            }
+            const data = await response.json();
+
+            if (data.pro_pay_status === '결제완료') {
+                container.innerHTML = `
+                    <div class="matching-loading-box">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                        <h3 class="overlay-title" style="margin-bottom: 8px;">결제 완료</h3>
+                        <p class="overlay-subtitle" style="margin-bottom: 24px;">이미 해당 라운딩의 플랫폼 이용 수수료(5만 원) 결제가 완료되었습니다.</p>
+                        <button class="btn btn-primary" onclick="app.openProMyPage('${app.escapeHtml(cert)}')">프로 마이페이지로 이동</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="my-booking-card" style="margin-top: 12px; border-color: var(--primary-color);">
+                    <div class="booking-badge-row" style="margin-bottom: 12px;">
+                        <span class="booking-title" style="font-size: 19px; color: var(--primary-color); font-weight: 800;">플랫폼 수수료 결제 🏌️‍♂️</span>
+                        <span class="booking-status-tag cancel" style="background-color: #FEE2E2; color: #DC2626; border-color: rgba(220,38,38,0.15); border: 1.5px solid;">수수료 미결제</span>
+                    </div>
+                    <p style="font-size: 14.5px; color: #4B5563; line-height: 1.6; margin-bottom: 20px; font-weight: 500;">
+                        라운딩 완료에 따른 플랫폼 이용 수수료(5만 원)를 결제해 주세요. 결제가 완료되면 파트너 프로 정지 상태가 즉시 해제됩니다.
+                    </p>
+                    
+                    <div style="background-color: #FAFAFA; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #111827;">라운딩 상세 정보</h4>
+                        <ul class="booking-details-list" style="margin: 0; border: none; padding: 0;">
+                            <li class="booking-detail-item" style="margin-bottom: 10px;">
+                                <span class="booking-detail-label">라운딩 골프장</span>
+                                <span class="booking-detail-value" style="font-weight: 700; color: var(--text-main);">${app.escapeHtml(data.golf_course)}</span>
+                            </li>
+                            <li class="booking-detail-item" style="margin-bottom: 10px;">
+                                <span class="booking-detail-label">라운딩 일정</span>
+                                <span class="booking-detail-value" style="font-weight: 700; color: var(--text-main);">${app.escapeHtml(data.lesson_date)} (${app.escapeHtml(data.lesson_time)})</span>
+                            </li>
+                            <li class="booking-detail-item" style="margin-bottom: 10px;">
+                                <span class="booking-detail-label">아마추어 고객</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.user_name || '아마추어')} 님</span>
+                            </li>
+                            <li class="booking-detail-item" style="margin-bottom: 0;">
+                                <span class="booking-detail-label">결제 금액</span>
+                                <span class="booking-detail-value" style="color: var(--accent-color); font-weight: 700; font-size: 16px;">50,000원</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-primary full-width" style="padding: 14px; font-size: 16px; font-weight: 700;" onclick="app.payProCommission(${reqId}, '${app.escapeHtml(data.user_name || '아마추어')}', '${app.escapeHtml(cert)}')">수수료 50,000원 결제하기</button>
+                    <button class="btn btn-secondary full-width mt-2" style="border: 1.5px solid var(--border-color); background: white; color: #4B5563; padding: 12px;" onclick="app.openProMyPage('${app.escapeHtml(cert)}')">마이페이지로 이동</button>
+                </div>
+            `;
+
+        } catch (e) {
+            container.innerHTML = `
+                <div class="matching-loading-box">
+                    <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                    <h3 class="overlay-title" style="margin-bottom: 8px;">정보 로드 실패</h3>
+                    <p class="overlay-subtitle" style="margin-bottom: 24px;">매칭 정보를 불러오는 데 실패하였습니다. 다시 시도해 주세요.</p>
+                    <button class="btn btn-secondary" onclick="app.loadProPayDirectView(${reqId}, '${app.escapeHtml(cert)}')">다시 시도</button>
+                </div>
+            `;
         }
     },
 
@@ -2020,84 +2114,7 @@ const app = {
     },
 
     getReviewSectionHtml: function(data) {
-        // KST 오늘 날짜 구하기
-        const d = new Date();
-        const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-        const kst = new Date(utc + (9 * 60 * 60 * 1000));
-        const yyyy = kst.getFullYear();
-        let mm = kst.getMonth() + 1;
-        let dd = kst.getDate();
-        if (mm < 10) mm = '0' + mm;
-        if (dd < 10) dd = '0' + dd;
-        const todayStr = `${yyyy}-${mm}-${dd}`;
-
-        // 라운딩 날짜가 오늘이거나 오늘보다 과거인 경우에만 후기 작성 활성화
-        if (data.lesson_date > todayStr) {
-            return '';
-        }
-
-        // 이미 작성된 후기가 있는 경우
-        if (data.review_text) {
-            const rating = data.review_rating || 5;
-            const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-            
-            const couponBadgeHtml = data.issued_coupon_code ? `
-                <div style="background-color: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 10px; text-align: center; margin-top: 12px;">
-                    <span style="font-size: 11px; font-weight: 700; color: #047857; display: block; margin-bottom: 4px; text-transform: uppercase;">🎁 오픈 이벤트 쿠폰 발급 완료</span>
-                    <strong style="font-size: 16px; color: #065f46; letter-spacing: 0.5px;">${app.escapeHtml(data.issued_coupon_code)}</strong>
-                    <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 4px;">(결제창의 쿠폰 등록란에 위 코드를 입력하면 30,000원이 자동 할인됩니다)</div>
-                </div>
-            ` : '';
-
-            return `
-                <div style="margin-top: 15px; padding: 15px; border-radius: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0;">
-                    <div style="font-size: 13.5px; font-weight: 700; color: #166534; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
-                        ✍️ 작성한 이용 후기
-                    </div>
-                    <div style="display: flex; gap: 2px; font-size: 14px; color: #eab308; margin-bottom: 6px;">
-                        ${stars}
-                    </div>
-                    <div style="font-size: 13px; color: #374151; font-weight: 500; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; background-color: white; padding: 10px; border-radius: 6px; border: 1px solid rgba(22, 101, 52, 0.08);">
-                        ${app.escapeHtml(data.review_text)}
-                    </div>
-                    ${couponBadgeHtml}
-                </div>
-            `;
-        }
-
-        const couponIssued = data.coupon_already_issued || (app.verifiedBookings && app.verifiedBookings.some(b => b.issued_coupon_code === 'WITHPRO30'));
-        
-        const titleText = "✍️ 소중한 이용후기를 들려주세요!";
-        
-        const promoHtml = couponIssued ? '' : `
-            <div style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 10px;">
-                후기를 남겨주시면 다음 예약 때 사용 가능한 <strong>3만원 즉시 할인 쿠폰(WITHPRO30)</strong>을 바로 발급해 드립니다.
-            </div>
-        `;
-        
-        const btnText = couponIssued ? "이용 후기 등록하기" : "후기 등록하고 3만원 쿠폰받기";
-
-        // 아직 후기를 작성하지 않은 경우
-        return `
-            <div id="review-form-${data.id}" style="margin-top: 15px; padding: 15px; border-radius: 12px; background-color: #f8fafc; border: 1px dashed #cbd5e1; box-sizing: border-box;">
-                <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
-                    ${titleText}
-                </div>
-                ${promoHtml}
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <span style="font-size: 13px; font-weight: 600; color: #475569;">평점:</span>
-                    <div style="display: flex; gap: 6px; font-size: 22px; cursor: pointer;">
-                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 1)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
-                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 2)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
-                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 3)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
-                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 4)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
-                        <span class="star-item" onclick="app.setReviewRating(${data.id}, 5)" style="color: #fbbf24; transition: transform 0.1s ease;">★</span>
-                    </div>
-                </div>
-                <textarea id="review-text-${data.id}" placeholder="프로님과의 필드레슨은 만족스러우셨나요? 소중한 의견을 들려주세요 (최소 5자 이상)" style="width: 100%; height: 75px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 500; resize: none; box-sizing: border-box; margin-bottom: 8px; font-family: inherit; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
-                <button class="btn btn-primary" onclick="app.submitReview(${data.id})" style="width: 100%; padding: 10px; font-size: 13.5px; font-weight: 700; border-radius: 8px; background-color: var(--primary-color); border: none; color: white; cursor: pointer; transition: background-color 0.2s;">${btnText}</button>
-            </div>
-        `;
+        return '';
     },
 
     reviewRatings: {},

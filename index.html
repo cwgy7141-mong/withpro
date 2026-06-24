@@ -662,8 +662,8 @@
                     <div class="payment-price">서비스 이용료 결제</div>
                 </div>
 
-                <!-- 할인 쿠폰 입력란 -->
-                <div class="coupon-section" style="background-color: white; border: 1px solid rgba(11, 54, 33, 0.08); border-radius: 16px; padding: 18px; margin: 14px 0; box-sizing: border-box; box-shadow: 0 4px 16px rgba(11, 54, 33, 0.03);">
+                <!-- 할인 쿠폰 입력란 (사용 안 함) -->
+                <div class="coupon-section" style="display: none !important; background-color: white; border: 1px solid rgba(11, 54, 33, 0.08); border-radius: 16px; padding: 18px; margin: 14px 0; box-sizing: border-box; box-shadow: 0 4px 16px rgba(11, 54, 33, 0.03);">
                     <label style="font-size: 13.5px; font-weight: 700; color: #0b3621; display: block; margin-bottom: 8px;">🎁 할인 쿠폰 등록</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="coupon-code-input" placeholder="쿠폰 코드를 입력하세요 (예: WITHPRO30)" style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 500; text-transform: uppercase;" onkeypress="if(event.key === 'Enter') app.applyCoupon()">
@@ -773,6 +773,17 @@
             </header>
             <div class="content scrollable" style="padding-bottom: 30px;">
                 <div id="pro-accept-container"></div>
+            </div>
+        </div>
+
+        <!-- 프로 다이렉트 수수료 결제 화면 -->
+        <div id="view-pro-pay-direct" class="view">
+            <header class="header">
+                <h2>수수료 결제하기 🏌️‍♂️</h2>
+                <div class="placeholder-icon"></div>
+            </header>
+            <div class="content scrollable" style="padding-bottom: 30px;">
+                <div id="pro-pay-direct-container"></div>
             </div>
         </div>
 
