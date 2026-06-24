@@ -1952,4 +1952,36 @@ select.pro-select:focus {
     transform: translateY(-1px);
 }
 
+/* Business Footer styles */
+.business-footer {
+    padding: 14px 12px;
+    border-top: 1px solid #f3f4f6;
+    text-align: center;
+    background-color: #fafafa;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 8px !important;
+    color: #8a909a !important;
+    line-height: 1.5;
+    flex-shrink: 0;
+}
+
+.business-footer .footer-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #4b525d;
+    font-size: 9.5px;
+}
+
+.business-footer p {
+    margin-bottom: 3px;
+    font-size: 8px !important;
+    color: #8a909a !important;
+}
+
+.business-footer a {
+    color: #8a909a !important;
+    text-decoration: underline;
+}
+
 
