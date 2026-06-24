@@ -25,8 +25,54 @@
 <body>
     <div class="app-container">
         
-        <!-- 홈 (선택) 화면 -->
-        <div id="view-home" class="view active">
+        <!-- 메인 역할 선택 화면 (첫 화면) -->
+        <div id="view-main-select" class="view active">
+            <div class="hero-section" style="margin-bottom: 40px; margin-top: 30px;">
+                <div class="logo-container">
+                    <img src="logo.svg" alt="withPRO Logo" class="main-logo">
+                </div>
+                <h1 class="main-title" style="font-size: 24px; font-weight: 800; color: var(--primary-color); line-height: 1.35; letter-spacing: -0.5px; margin-top: 15px;">KPGA · KLPGA 프로와<br>걷는 18홀의 기적</h1>
+                <p class="main-subtitle" style="font-size: 13.5px; color: var(--text-sub); line-height: 1.5; margin-top: 10px;">검증된 최고 실력의 프로들과 완벽한 필드레슨을<br>매칭해 드립니다.</p>
+            </div>
+
+            <div class="selection-container" style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 45px; padding: 0 4px;">
+                <!-- 아마추어 골퍼 선택 카드 -->
+                <div class="selection-card amateur" onclick="app.switchHomeTab('amateur'); app.navigate('view-home');" style="cursor: pointer; position: relative; border-radius: 20px; padding: 26px 24px; background: linear-gradient(135deg, #0b3621 0%, #124d32 100%); color: white; box-shadow: 0 10px 25px rgba(11, 54, 33, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05);">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--accent-color); letter-spacing: 1px; margin-bottom: 6px; text-transform: uppercase;">For Amateur Golfer</div>
+                    <h3 style="font-size: 19.5px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px;">아마추어 골퍼로 시작</h3>
+                    <p style="font-size: 12.5px; color: rgba(255, 255, 255, 0.8); line-height: 1.4; font-weight: 500;">필드레슨 매칭 신청 & 예약 현황 확인</p>
+                    <div style="position: absolute; right: 24px; bottom: 24px; background: rgba(255, 255, 255, 0.15); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">🏌️‍♂️</div>
+                </div>
+
+                <!-- 프로 골퍼 선택 카드 -->
+                <div class="selection-card pro" onclick="app.switchHomeTab('pro'); app.navigate('view-home');" style="cursor: pointer; position: relative; border-radius: 20px; padding: 26px 24px; background: white; border: 1.5px solid var(--border-color); color: var(--text-main); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--primary-light); letter-spacing: 1px; margin-bottom: 6px; text-transform: uppercase;">For Partner Pro</div>
+                    <h3 style="font-size: 19.5px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; color: var(--primary-color);">프로 골퍼로 시작</h3>
+                    <p style="font-size: 12.5px; color: var(--text-sub); line-height: 1.4; font-weight: 500;">파트너 프로 활동 신청 & 매칭 관리</p>
+                    <div style="position: absolute; right: 24px; bottom: 24px; background: var(--bg-color); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--primary-color);">🏌️</div>
+                </div>
+            </div>
+
+            <!-- 사업자 정보 푸터 영역 (동일 규격 유지) -->
+            <footer style="padding: 24px 16px; border-top: 1px solid #f3f4f6; text-align: center; font-size: 9.5px; color: #6b7280; line-height: 1.6; background-color: #fafafa; width: 100%; box-sizing: border-box;">
+                <div style="font-weight: 700; margin-bottom: 6px; color: #374151; font-size: 11px;">withPRO (위드프로)</div>
+                <p style="margin-bottom: 4px; font-size: 9.5px; color: #6b7280;">대표자명: 김숙경 | 사업자등록번호: 392-09-03350 | 통신판매업신고번호: 제 2026-부산남구-0369 호</p>
+                <p style="margin-bottom: 4px; font-size: 9.5px; color: #6b7280;">주소: 부산광역시 남구 감만동일스위트 102동 304호</p>
+                <p style="margin-bottom: 4px; font-size: 9.5px; color: #6b7280;">이메일: withpro.app@gmail.com | 고객센터: 070-4571-5234</p>
+                <p style="margin-top: 8px; font-size: 9px; color: #9ca3af;">© 2026 withPRO. All Rights Reserved. | <a href="/privacy.html" style="color: #6b7280; text-decoration: underline;">개인정보처리방침</a> | <a href="/term.html" style="color: #6b7280; text-decoration: underline;">서비스이용약관</a></p>
+            </footer>
+        </div>
+
+        <!-- 홈 (선택) 화면 (이제 활성화 상태 아님) -->
+        <div id="view-home" class="view">
+            <!-- 역할 선택 화면으로 돌아가는 버튼 추가 -->
+            <div style="display: flex; justify-content: flex-start; margin-bottom: -15px; padding: 0 4px;">
+                <button class="icon-btn" onclick="app.navigate('view-main-select')" style="padding: 4px; font-weight: 500; font-size: 13.5px; color: var(--text-sub); display: flex; align-items: center; gap: 4px; margin-left: -4px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span>처음으로</span>
+                </button>
+            </div>
+
             <div class="hero-section">
                 <div class="logo-container">
                     <img src="logo.svg" alt="withPRO Logo" class="main-logo">
