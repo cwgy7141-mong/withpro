@@ -459,10 +459,10 @@ const app = {
         // 비밀 이스터에그: 메인 홈 화면의 로고를 1초 내에 3번 연속 클릭하면 관리자 페이지로 이동
         let logoClicks = 0;
         let logoClickTimer;
-        const mainLogo = document.querySelector('#view-home .main-logo');
-        if (mainLogo) {
-            mainLogo.style.cursor = 'pointer'; // 클릭 가능함을 시각적으로 안내 (관리자 전용)
-            mainLogo.addEventListener('click', () => {
+        // 비밀 이스터에그: 메인 홈 화면 및 첫 선택 화면의 로고를 1초 내에 3번 연속 클릭하면 관리자 페이지로 이동
+        document.querySelectorAll('.main-logo').forEach(logo => {
+            logo.style.cursor = 'pointer'; // 클릭 가능함을 시각적으로 안내 (관리자 전용)
+            logo.addEventListener('click', () => {
                 logoClicks++;
                 clearTimeout(logoClickTimer);
                 
@@ -478,7 +478,7 @@ const app = {
                     logoClicks = 0;
                 }, 1000);
             });
-        }
+        });
 
         // URL 쿼리 파라미터 파싱 및 화면 연동 (SMS 알림 링크 대응)
         const urlParams = new URLSearchParams(window.location.search);
