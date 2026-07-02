@@ -1,0 +1,43 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "android-app/**",
+      "scratch/**",
+      "__pycache__/**",
+      "withpro.db",
+      "server.py",
+      "setup_server.sh",
+      "requirements.txt",
+      "firebase-service-account.json",
+      "firebase-web-config.json",
+      "app-release.aab",
+      "*.py",
+      "*.jks",
+      "*.md"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
+      }
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "ignore": [
+      "venv",
+      ".venv",
+      "direnv",
+      "node_modules",
+      "firebase-debug.log",
+      "firestore-debug.log",
+      "pubsub-debug.log"
+    ]
+  }
+}
