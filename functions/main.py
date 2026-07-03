@@ -651,10 +651,10 @@ def api(req: https_fn.Request) -> https_fn.Response:
             if not req_id or not pro_id:
                 return create_response({'error': 'Missing ID or Pro ID'}, 400)
                 
-            req_ref = db.collection("lesson_requests").document(req_id)
+            req_ref = db.collection("lesson_requests").document(str(req_id))
             req_doc = req_ref.get()
             
-            pro_ref = db.collection("pro_users").document(pro_id)
+            pro_ref = db.collection("pro_users").document(str(pro_id))
             pro_doc = pro_ref.get()
             
             if not req_doc.exists or not pro_doc.exists:
@@ -802,8 +802,8 @@ def api(req: https_fn.Request) -> https_fn.Response:
             if not req_id or not pro_id:
                 return create_response({'error': 'Missing ID or Pro ID'}, 400)
                 
-            req_ref = db.collection("lesson_requests").document(req_id)
-            pro_ref = db.collection("pro_users").document(pro_id)
+            req_ref = db.collection("lesson_requests").document(str(req_id))
+            pro_ref = db.collection("pro_users").document(str(pro_id))
             
             req_doc = req_ref.get()
             pro_doc = pro_ref.get()
@@ -817,7 +817,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             # Update status to pending pro acceptance
             req_ref.update({
                 "status": "프로 수락 대기중",
-                "matched_pro_id": pro_id
+                "matched_pro_id": str(pro_id)
             })
             
             pro_name = pro_data.get('name', '배정 프로')
@@ -873,7 +873,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             if not req_id:
                 return create_response({'error': 'Missing ID'}, 400)
                 
-            req_ref = db.collection("lesson_requests").document(req_id)
+            req_ref = db.collection("lesson_requests").document(str(req_id))
             req_doc = req_ref.get()
             if not req_doc.exists:
                 return create_response({'error': 'Lesson request not found'}, 404)
@@ -910,7 +910,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             # Fetch pro details
             pro_row = None
             if req_data.get('matched_pro_id'):
-                pro_doc = db.collection("pro_users").document(req_data.get('matched_pro_id')).get()
+                pro_doc = db.collection("pro_users").document(str(req_data.get('matched_pro_id'))).get()
                 if pro_doc.exists:
                     pro_row = pro_doc.to_dict()
                     
@@ -974,7 +974,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             pro_contact = pro_data.get('contact', '-')
             
             # Update commission status in lesson request
-            req_ref = db.collection("lesson_requests").document(req_id)
+            req_ref = db.collection("lesson_requests").document(str(req_id))
             req_doc = req_ref.get()
             if not req_doc.exists:
                 return create_response({'error': 'Lesson request not found'}, 404)
@@ -1044,7 +1044,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             if not pro_id:
                 return create_response({'error': 'Missing ID'}, 400)
                 
-            pro_ref = db.collection("pro_users").document(pro_id)
+            pro_ref = db.collection("pro_users").document(str(pro_id))
             pro_doc = pro_ref.get()
             if not pro_doc.exists:
                 return create_response({'error': 'Pro not found'}, 404)
@@ -1091,7 +1091,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             if not col_name:
                 return create_response({'error': 'Invalid type'}, 400)
                 
-            db.collection(col_name).document(item_id).delete()
+            db.collection(col_name).document(str(item_id)).delete()
             
             # Discord Alert
             send_discord_notification("🗑️ 관리자 데이터 삭제 실행", {
@@ -1330,7 +1330,7 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
                 continue
                 
             # Fetch pro details
-            pro_doc = db.collection("pro_users").document(pro_id).get()
+            pro_doc = db.collection("pro_users").document(str(pro_id)).get()
             if not pro_doc.exists:
                 continue
                 
@@ -1359,7 +1359,7 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
                 if pro_notified < 2:
                     # Suspend pro
                     if pro_status != "정지":
-                        db.collection("pro_users").document(pro_id).update({"status": "정지"})
+                        db.collection("pro_users").document(str(pro_id)).update({"status": "정지"})
                         send_discord_notification("🚨 파트너 프로 활동 정지 (수수료 미납)", {
                             "프로명": pro_name,
                             "연락처": pro_contact,
