@@ -221,98 +221,107 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None):
 def dispatch_push_notification(receiver, title, body, link=None, template_type=None):
     if not receiver:
         return
-    
-    clean_receiver = "".join(filter(str.isdigit, receiver))
-    
-    # Mirror notification to Discord
-    fields = {
-        "수신 대상": f"{clean_receiver}",
-        "알림 제목": title,
-        "알림 내용": body
-    }
-    if link:
-        fields["이동 링크"] = link
-    send_discord_notification(f"📱 [withPRO App Push] {title}", fields)
-    
-    # Try FCM Push via Firebase Messaging SDK
-    try:
-        # Check if user has an FCM token in regular_users or pro_users
-        fcm_token = None
         
-        # Search regular_users
-        reg_users = db.collection("regular_users").where("contact", "==", receiver).limit(1).get()
-        if reg_users:
-            fcm_token = reg_users[0].to_dict().get("fcm_token")
+    import threading
+    
+    def run_dispatch():
+        try:
+            clean_receiver = "".join(filter(str.isdigit, receiver))
             
-        # Search pro_users if not found
-        if not fcm_token:
-            pro_users = db.collection("pro_users").where("contact", "==", receiver).limit(1).get()
-            if pro_users:
-                fcm_token = pro_users[0].to_dict().get("fcm_token")
+            # Mirror notification to Discord
+            fields = {
+                "수신 대상": f"{clean_receiver}",
+                "알림 제목": title,
+                "알림 내용": body
+            }
+            if link:
+                fields["이동 링크"] = link
+            send_discord_notification(f"📱 [withPRO App Push] {title}", fields)
+            
+            # Formulate potential formats for the contact query
+            formats = [receiver]
+            if clean_receiver not in formats:
+                formats.append(clean_receiver)
+            
+            if len(clean_receiver) == 11 and clean_receiver.startswith("010"):
+                formatted = f"{clean_receiver[:3]}-{clean_receiver[3:7]}-{clean_receiver[7:]}"
+                if formatted not in formats:
+                    formats.append(formatted)
+            elif len(clean_receiver) == 10 and clean_receiver.startswith("01"):
+                formatted = f"{clean_receiver[:3]}-{clean_receiver[3:6]}-{clean_receiver[6:]}"
+                if formatted not in formats:
+                    formats.append(formatted)
+            
+            # Try FCM Push via Firebase Messaging SDK
+            fcm_token = None
+            try:
+                # 1. Search regular_users using indexed queries
+                for fmt in formats:
+                    reg_users = db.collection("regular_users").where("contact", "==", fmt).limit(1).get()
+                    if reg_users:
+                        fcm_token = reg_users[0].to_dict().get("fcm_token")
+                        if fcm_token:
+                            break
+                            
+                # 2. Search pro_users if not found
+                if not fcm_token:
+                    for fmt in formats:
+                        pro_users = db.collection("pro_users").where("contact", "==", fmt).limit(1).get()
+                        if pro_users:
+                            fcm_token = pro_users[0].to_dict().get("fcm_token")
+                            if fcm_token:
+                                break
                 
-        # Also clean formats if mismatch
-        if not fcm_token:
-            # Match without hyphens
-            reg_users = db.collection("regular_users").get()
-            for u in reg_users:
-                ud = u.to_dict()
-                if ud.get("contact") and ud.get("contact").replace("-", "") == clean_receiver:
-                    fcm_token = ud.get("fcm_token")
-                    break
+                if fcm_token:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title=title,
+                            body=body
+                        ),
+                        data={
+                            "click_action": link if link else "https://withpro.kr"
+                        },
+                        token=fcm_token
+                    )
+                    response = messaging.send(message)
+                    logging.info(f"[Firebase FCM] Push Notification Sent! Response: {response}")
+            except Exception as e:
+                logging.error(f"[Firebase FCM] Push Notification Failed: {e}")
+                
+            # Kakao Alimtalk Failover
+            if SMS_PROVIDER != "none" and template_type:
+                talk_message = f"[{title}]\n{body}"
+                tpl_code = None
+                
+                if template_type == "lesson_requested":
+                    tpl_code = KAKAO_TPL_LESSON_REQUESTED
+                elif template_type == "match_proposal":
+                    tpl_code = KAKAO_TPL_MATCH_PROPOSAL
+                elif template_type == "match_success":
+                    tpl_code = KAKAO_TPL_MATCH_SUCCESS
+                elif template_type == "match_confirmed":
+                    tpl_code = KAKAO_TPL_MATCH_CONFIRMED
+                elif template_type == "pro_commission_due":
+                    tpl_code = KAKAO_TPL_PRO_COMMISSION_DUE
+                elif template_type == "pro_payment_request":
+                    tpl_code = KAKAO_TPL_PRO_PAYMENT_REQUEST
+                elif template_type == "amateur_review_request_with_coupon":
+                    tpl_code = KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITH_COUPON
+                elif template_type == "amateur_review_request_without_coupon":
+                    tpl_code = KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITHOUT_COUPON
                     
-        if not fcm_token:
-            pro_users = db.collection("pro_users").get()
-            for p in pro_users:
-                pd = p.to_dict()
-                if pd.get("contact") and pd.get("contact").replace("-", "") == clean_receiver:
-                    fcm_token = pd.get("fcm_token")
-                    break
-        
-        if fcm_token:
-            message = messaging.Message(
-                notification=messaging.Notification(
-                    title=title,
-                    body=body
-                ),
-                data={
-                    "click_action": link if link else "https://withpro.kr"
-                },
-                token=fcm_token
-            )
-            response = messaging.send(message)
-            logging.info(f"[Firebase FCM] Push Notification Sent! Response: {response}")
-    except Exception as e:
-        logging.error(f"[Firebase FCM] Push Notification Failed: {e}")
-        
-    # Kakao Alimtalk Failover
-    if SMS_PROVIDER != "none" and template_type:
-        talk_message = f"[{title}]\n{body}"
-        tpl_code = None
-        
-        if template_type == "lesson_requested":
-            tpl_code = KAKAO_TPL_LESSON_REQUESTED
-        elif template_type == "match_proposal":
-            tpl_code = KAKAO_TPL_MATCH_PROPOSAL
-        elif template_type == "match_success":
-            tpl_code = KAKAO_TPL_MATCH_SUCCESS
-        elif template_type == "match_confirmed":
-            tpl_code = KAKAO_TPL_MATCH_CONFIRMED
-        elif template_type == "pro_commission_due":
-            tpl_code = KAKAO_TPL_PRO_COMMISSION_DUE
-        elif template_type == "pro_payment_request":
-            tpl_code = KAKAO_TPL_PRO_PAYMENT_REQUEST
-        elif template_type == "amateur_review_request_with_coupon":
-            tpl_code = KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITH_COUPON
-        elif template_type == "amateur_review_request_without_coupon":
-            tpl_code = KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITHOUT_COUPON
-            
-        if tpl_code:
-            if SMS_PROVIDER == "aligo":
-                send_aligo_alimtalk(clean_receiver, tpl_code, title, talk_message, link)
-            elif SMS_PROVIDER == "solapi":
-                send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link)
-        else:
-            logging.info(f"[Kakao Alimtalk] No template mapping for: {template_type}")
+                if tpl_code:
+                    if SMS_PROVIDER == "aligo":
+                        send_aligo_alimtalk(clean_receiver, tpl_code, title, talk_message, link)
+                    elif SMS_PROVIDER == "solapi":
+                        send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link)
+                else:
+                    logging.info(f"[Kakao Alimtalk] No template mapping for: {template_type}")
+        except Exception as ex:
+            logging.error(f"[dispatch_push_notification Background Error] {ex}")
+
+    # Run in a background thread to prevent blocking the API response
+    threading.Thread(target=run_dispatch, daemon=True).start()
 
 # CORS and Response helper
 def create_response(data, status=200):
