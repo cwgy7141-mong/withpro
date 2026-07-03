@@ -364,17 +364,26 @@ def api(req: https_fn.Request) -> https_fn.Response:
     # ----------------------------------------------------
     if path == "/api/firebase-config" and req.method == "GET":
         config = {}
-        # Read from firebase-web-config.json if it exists (usually placed in Hosting directory or functions)
-        web_config_path = "firebase-web-config.json"
-        if not os.path.exists(web_config_path):
-            web_config_path = "../firebase-web-config.json" # try root directory
+        # 1. Try reading from Firestore first
+        try:
+            settings_doc = db.collection("system_settings").document("firebase_web_config").get()
+            if settings_doc.exists:
+                config = settings_doc.to_dict()
+        except Exception as e:
+            logging.error(f"Failed to read config from Firestore: {e}")
             
-        if os.path.exists(web_config_path):
-            try:
-                with open(web_config_path, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-            except Exception as e:
-                logging.error(f"Failed to read web config: {e}")
+        # 2. Fallback to local file if Firestore is empty or doesn't have apiKey
+        if not config or not config.get("apiKey") or "mock-api-key" in config.get("apiKey", ""):
+            web_config_path = "firebase-web-config.json"
+            if not os.path.exists(web_config_path):
+                web_config_path = "../firebase-web-config.json" # try root directory
+                
+            if os.path.exists(web_config_path):
+                try:
+                    with open(web_config_path, "r", encoding="utf-8") as f:
+                        config = json.load(f)
+                except Exception as e:
+                    logging.error(f"Failed to read web config: {e}")
         return create_response(config)
 
     # ----------------------------------------------------
@@ -386,18 +395,31 @@ def api(req: https_fn.Request) -> https_fn.Response:
             return create_response({'error': 'Unauthorized'}, 401)
             
         client_configured = False
-        web_config_path = "firebase-web-config.json"
-        if not os.path.exists(web_config_path):
-            web_config_path = "../firebase-web-config.json"
+        
+        # 1. Check Firestore
+        try:
+            settings_doc = db.collection("system_settings").document("firebase_web_config").get()
+            if settings_doc.exists:
+                cfg = settings_doc.to_dict()
+                if cfg.get('apiKey') and cfg.get('messagingSenderId') and "mock-api-key" not in cfg.get('apiKey', ""):
+                    client_configured = True
+        except Exception:
+            pass
             
-        if os.path.exists(web_config_path):
-            try:
-                with open(web_config_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    if cfg.get('apiKey') and cfg.get('messagingSenderId'):
-                        client_configured = True
-            except Exception:
-                pass
+        # 2. Fallback to file check
+        if not client_configured:
+            web_config_path = "firebase-web-config.json"
+            if not os.path.exists(web_config_path):
+                web_config_path = "../firebase-web-config.json"
+                
+            if os.path.exists(web_config_path):
+                try:
+                    with open(web_config_path, "r", encoding="utf-8") as f:
+                        cfg = json.load(f)
+                        if cfg.get('apiKey') and cfg.get('messagingSenderId') and "mock-api-key" not in cfg.get('apiKey', ""):
+                            client_configured = True
+                except Exception:
+                    pass
                 
         return create_response({
             'client_configured': client_configured,
@@ -1175,8 +1197,15 @@ def api(req: https_fn.Request) -> https_fn.Response:
             if key != ADMIN_SECRET_KEY:
                 return create_response({'error': 'Unauthorized'}, 401)
                 
-            with open("firebase-web-config.json", "w", encoding="utf-8") as f:
-                json.dump(config, f, indent=4)
+            # 1. Save to Firestore (works in read-only environment)
+            db.collection("system_settings").document("firebase_web_config").set(config)
+            
+            # 2. Attempt to write to local file (fails in GCF, which is fine since we catch it)
+            try:
+                with open("firebase-web-config.json", "w", encoding="utf-8") as f:
+                    json.dump(config, f, indent=4)
+            except Exception as e:
+                logging.info(f"Local file write skipped (normal in read-only GCF): {e}")
                 
             return create_response({'status': 'success', 'message': '클라이언트 웹 앱 설정이 안전하게 저장되었습니다.'})
         except Exception as e:
