@@ -213,12 +213,18 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None):
     }
     
     if link:
+        clean_link = link
+        if clean_link.startswith("https://"):
+            clean_link = clean_link[8:]
+        elif clean_link.startswith("http://"):
+            clean_link = clean_link[7:]
+            
         payload["message"]["kakaoOptions"]["buttons"] = [
             {
                 "buttonName": "자세히 보기",
                 "buttonType": "WL",
-                "linkMo": link,
-                "linkPc": link
+                "linkMo": clean_link,
+                "linkPc": clean_link
             }
         ]
         
