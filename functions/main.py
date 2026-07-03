@@ -108,10 +108,35 @@ def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
         logging.info("[Aligo Alimtalk] Config missing. Skipping.")
         return False
         
-    url = "https://apis.aligo.in/akv10/alimtalk/send/"
+    import urllib.request
+    import urllib.parse
+    
+    # 1. Generate Token first
+    try:
+        token_url = "https://kakaoapi.aligo.in/akv10/token/create/30/i/"
+        token_payload = {
+            "apikey": SMS_API_KEY,
+            "userid": SMS_USER_ID
+        }
+        token_data = urllib.parse.urlencode(token_payload).encode("utf-8")
+        token_req = urllib.request.Request(token_url, data=token_data)
+        
+        with urllib.request.urlopen(token_req, timeout=5) as token_res:
+            token_res_data = json.loads(token_res.read().decode("utf-8"))
+            if str(token_res_data.get("code")) != "0":
+                logging.error(f"[Aligo Alimtalk Token Error] Failed: {token_res_data}")
+                return False
+            token = token_res_data.get("token")
+    except Exception as te:
+        logging.error(f"[Aligo Alimtalk Token Exception] {te}")
+        return False
+
+    # 2. Send Alimtalk using the Token
+    url = "https://kakaoapi.aligo.in/akv10/alimtalk/send/"
     payload = {
-        "key": SMS_API_KEY,
+        "apikey": SMS_API_KEY,
         "userid": SMS_USER_ID,
+        "token": token,
         "sender": SMS_SENDER_NUMBER,
         "senderkey": KAKAO_SENDER_KEY,
         "tpl_code": tpl_code,
@@ -137,8 +162,6 @@ def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
         payload["button_1"] = json.dumps(button_info)
         
     try:
-        import urllib.request
-        import urllib.parse
         data = urllib.parse.urlencode(payload).encode("utf-8")
         req = urllib.request.Request(url, data=data)
         with urllib.request.urlopen(req, timeout=5) as response:
