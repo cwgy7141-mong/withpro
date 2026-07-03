@@ -230,7 +230,7 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None):
         
         with urllib.request.urlopen(req, timeout=5) as response:
             res_data = json.loads(response.read().decode("utf-8"))
-            if str(res_data.get("statusCode")) in ["2000", "3000"] or "messageId" in res_data.get("description", ""):
+            if "messageId" in res_data or "groupId" in res_data or str(res_data.get("statusCode")) in ["2000", "3000"]:
                 logging.info(f"[Solapi Alimtalk] Success: {receiver}")
                 return True
             else:
