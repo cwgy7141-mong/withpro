@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 // Return false to let the WebView load the URL
-                // If the URL is external (not withpro.life), you could launch a browser,
+                // If the URL is external (not withpro.kr), you could launch a browser,
                 // but for simplicity and web app wrapper, we let WebView load everything.
                 return false;
             }
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
         myWebView.setWebChromeClient(new WebChromeClient());
 
         // Load withPRO URL
-        myWebView.loadUrl("https://withpro.life");
+        myWebView.loadUrl("https://withpro.kr");
     }
 
     @Override

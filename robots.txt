@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin.html
 Disallow: /thumbnail_generator.html
 
-Sitemap: https://withpro.life/sitemap.xml
+Sitemap: https://withpro.kr/sitemap.xml
