@@ -1844,7 +1844,7 @@ const app = {
                         </ul>
                     </div>
                     
-                    <button class="btn btn-primary full-width" style="padding: 14px; font-size: 16px; font-weight: 700;" onclick="app.payProCommission(${reqId}, '${app.escapeHtml(data.user_name || '아마추어')}', '${app.escapeHtml(cert)}')">수수료 50,000원 결제하기</button>
+                    <button class="btn btn-primary full-width" style="padding: 14px; font-size: 16px; font-weight: 700;" onclick="app.payProCommission('${reqId}', '${app.escapeHtml(data.user_name || '아마추어')}', '${app.escapeHtml(cert)}')">수수료 50,000원 결제하기</button>
                     <button class="btn btn-secondary full-width mt-2" style="border: 1.5px solid var(--border-color); background: white; color: #4B5563; padding: 12px;" onclick="app.openProMyPage('${app.escapeHtml(cert)}')">마이페이지로 이동</button>
                 </div>
             `;
@@ -1855,7 +1855,7 @@ const app = {
                     <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
                     <h3 class="overlay-title" style="margin-bottom: 8px;">정보 로드 실패</h3>
                     <p class="overlay-subtitle" style="margin-bottom: 24px;">매칭 정보를 불러오는 데 실패하였습니다. 다시 시도해 주세요.</p>
-                    <button class="btn btn-secondary" onclick="app.loadProPayDirectView(${reqId}, '${app.escapeHtml(cert)}')">다시 시도</button>
+                    <button class="btn btn-secondary" onclick="app.loadProPayDirectView('${reqId}', '${app.escapeHtml(cert)}')">다시 시도</button>
                 </div>
             `;
         }
@@ -1929,8 +1929,8 @@ const app = {
                     </div>
 
                     <div class="grid-2 gap-2" style="display: flex; gap: 10px;">
-                        <button class="btn btn-secondary" style="flex: 1; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; border: 1.5px solid var(--border-color); background-color: white; color: #5c645f; cursor: pointer;" onclick="app.submitProAccept(false, ${reqId}, ${proId})">거절하기</button>
-                        <button class="btn btn-primary" style="flex: 1; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; background-color: var(--primary-color); border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(11,54,33,0.15);" onclick="app.submitProAccept(true, ${reqId}, ${proId})">수락하기</button>
+                        <button class="btn btn-secondary" style="flex: 1; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; border: 1.5px solid var(--border-color); background-color: white; color: #5c645f; cursor: pointer;" onclick="app.submitProAccept(false, '${reqId}', '${proId}')">거절하기</button>
+                        <button class="btn btn-primary" style="flex: 1; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; background-color: var(--primary-color); border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(11,54,33,0.15);" onclick="app.submitProAccept(true, '${reqId}', '${proId}')">수락하기</button>
                     </div>
                 </div>
             `;
@@ -1940,7 +1940,7 @@ const app = {
                     <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
                     <h3 class="overlay-title">오류가 발생했습니다</h3>
                     <p class="overlay-subtitle" style="margin-bottom: 20px;">매칭 정보를 불러오는 데 실패했습니다.</p>
-                    <button class="btn btn-secondary" onclick="app.loadProAcceptView(${reqId}, ${proId})">다시 시도</button>
+                    <button class="btn btn-secondary" onclick="app.loadProAcceptView('${reqId}', '${proId}')">다시 시도</button>
                 </div>
             `;
         }
