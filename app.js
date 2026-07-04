@@ -459,6 +459,16 @@ const app = {
             timeInput.addEventListener('input', handleTimeChange);
         }
 
+        // picker-minute 옵션 동적 생성
+        const minSelect = document.getElementById('picker-minute');
+        if (minSelect && minSelect.options.length === 0) {
+            for (let i = 0; i < 60; i++) {
+                const val = String(i).padStart(2, '0');
+                const opt = new Option(`${val}분`, val);
+                minSelect.add(opt);
+            }
+        }
+
         // 비밀 이스터에그: 메인 홈 화면의 로고를 1초 내에 3번 연속 클릭하면 관리자 페이지로 이동
         let logoClicks = 0;
         let logoClickTimer;
@@ -2114,6 +2124,68 @@ const app = {
     
     closePrivacyModal: function() {
         document.getElementById('privacy-modal').classList.remove('active');
+    },
+
+    openCustomTimePicker: function() {
+        const modal = document.getElementById('custom-time-picker-modal');
+        if (!modal) return;
+        
+        // 현재 설정된 시간 값 파싱하여 선택기 초기화
+        const currentVal = document.getElementById('lesson-time').value;
+        let ampm = 'AM';
+        let hour = 7;
+        let minute = '00';
+        
+        if (currentVal) {
+            const parts = currentVal.split(':');
+            let h = parseInt(parts[0], 10);
+            minute = parts[1];
+            if (h >= 12) {
+                ampm = 'PM';
+                if (h > 12) h -= 12;
+            } else if (h === 0) {
+                h = 12;
+            }
+            hour = h;
+        }
+        
+        document.getElementById('picker-ampm').value = ampm;
+        document.getElementById('picker-hour').value = String(hour);
+        document.getElementById('picker-minute').value = String(minute);
+        
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+    },
+    
+    closeCustomTimePicker: function() {
+        const modal = document.getElementById('custom-time-picker-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
+    },
+    
+    applyCustomTimePicker: function() {
+        const ampm = document.getElementById('picker-ampm').value;
+        let hour = parseInt(document.getElementById('picker-hour').value, 10);
+        const minute = document.getElementById('picker-minute').value;
+        
+        if (ampm === 'PM' && hour < 12) {
+            hour += 12;
+        } else if (ampm === 'AM' && hour === 12) {
+            hour = 0;
+        }
+        
+        const formattedTime = `${String(hour).padStart(2, '0')}:${minute}`;
+        
+        const timeInput = document.getElementById('lesson-time');
+        if (timeInput) {
+            timeInput.value = formattedTime;
+            // dispatch change event to trigger listeners and display update
+            timeInput.dispatchEvent(new Event('change'));
+        }
+        
+        app.closeCustomTimePicker();
     },
 
     getReviewSectionHtml: function(data) {

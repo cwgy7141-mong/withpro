@@ -238,7 +238,7 @@
                 </div>
 
                 <!-- 티오프 시간 카드 -->
-                <div class="input-card" onclick="document.getElementById('lesson-time').showPicker ? document.getElementById('lesson-time').showPicker() : document.getElementById('lesson-time').focus()">
+                <div class="input-card" onclick="app.openCustomTimePicker()">
                     <div class="input-card-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -932,6 +932,39 @@
 
     <!-- 미니 슬라이딩 토스트 -->
     <div id="pro-toast" class="pro-toast">✨ 활동 정보가 저장되었습니다!</div>
+
+    <!-- 커스텀 시간 선택 모달 -->
+    <div id="custom-time-picker-modal" class="privacy-modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 54, 33, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 30000; display: none; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div class="privacy-modal-container" style="background: white; width: 100%; max-width: 320px; border-radius: 24px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid rgba(11,54,33,0.08); text-align: center; box-sizing: border-box;">
+            <h3 style="font-size: 17px; font-weight: 800; color: var(--primary-color); margin-top: 0; margin-bottom: 20px; letter-spacing: -0.3px;">티오프 시간 선택</h3>
+            <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
+                <select id="picker-ampm" style="padding: 10px 8px; font-size: 16px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-weight: 700; width: 80px; outline: none; background-color: #f9fafb; text-align: center;">
+                    <option value="AM">오전</option>
+                    <option value="PM">오후</option>
+                </select>
+                <select id="picker-hour" style="padding: 10px 8px; font-size: 16px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-weight: 700; width: 80px; outline: none; background-color: #f9fafb; text-align: center;">
+                    <option value="1">1시</option>
+                    <option value="2">2시</option>
+                    <option value="3">3시</option>
+                    <option value="4">4시</option>
+                    <option value="5">5시</option>
+                    <option value="6">6시</option>
+                    <option value="7">7시</option>
+                    <option value="8">8시</option>
+                    <option value="9">9시</option>
+                    <option value="10">10시</option>
+                    <option value="11">11시</option>
+                    <option value="12">12시</option>
+                </select>
+                <select id="picker-minute" style="padding: 10px 8px; font-size: 16px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-weight: 700; width: 80px; outline: none; background-color: #f9fafb; text-align: center;">
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="app.closeCustomTimePicker()" style="flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #f3f4f6; border: none; color: #4b5563; cursor: pointer;">취소</button>
+                <button class="btn btn-primary" onclick="app.applyCustomTimePicker()" style="flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; background: var(--primary-color); color: #fff; border: none; cursor: pointer;">선택 완료</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 약관보기 모달 레이아웃 -->
     <div id="privacy-modal" class="privacy-modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 54, 33, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 30000; display: none; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
