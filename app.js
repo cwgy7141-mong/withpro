@@ -290,6 +290,9 @@
 
 
 const app = {
+    // 결제 PG사 설정 ('html5_inicis': KG이니시스, 'tosspayments': 토스페이먼츠)
+    DEFAULT_PG_PROVIDER: 'html5_inicis',
+
     // 보안 강화: 본인 예약 상세 정보 및 결제창 진입 시 이름과 전화번호의 정확한 수동 대조를 강제하기 위한 메모리 전용 세션 상태
     verifiedUserName: "",
     verifiedUserContact: "",
@@ -1218,20 +1221,20 @@ const app = {
     executePayment: function() {
         const method = app.selectedPayMethod || 'card';
         let payMethodText = '신용카드';
-        let pgProvider = 'html5_inicis'; // 테스트용 PG사 (KG이니시스)
+        let pgProvider = app.DEFAULT_PG_PROVIDER; // 기본 설정된 PG사 사용
         let payMethodCode = 'card';      // 기본 수단 (신용카드)
         
         if (method === 'card') {
             const cardSelect = document.getElementById('pay-card-company');
             const cardName = cardSelect ? cardSelect.value : '신용카드';
             payMethodText = `${cardName} (신용카드)`;
-            pgProvider = 'html5_inicis';
+            pgProvider = app.DEFAULT_PG_PROVIDER;
             payMethodCode = 'card';
         } else if (method === 'transfer') {
             const bankSelect = document.getElementById('pay-bank-name');
             const bankName = bankSelect ? bankSelect.value : '계좌이체';
             payMethodText = `${bankName} (실시간 계좌이체)`;
-            pgProvider = 'html5_inicis';
+            pgProvider = app.DEFAULT_PG_PROVIDER;
             payMethodCode = 'trans';
         }
         
@@ -1700,7 +1703,7 @@ const app = {
         const merchantUid = `withpro_pro_${reqId}_${Date.now()}`;
         
         IMP.request_pay({
-            pg: 'html5_inicis',
+            pg: app.DEFAULT_PG_PROVIDER,
             pay_method: 'card',
             merchant_uid: merchantUid,
             name: `withPRO 프로 라운딩 수수료 (${amateurName}님 매칭 건)`,
