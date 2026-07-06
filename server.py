@@ -271,7 +271,7 @@ def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
         print(f"[Aligo Alimtalk] 에러 발생: {e}", flush=True)
         return False
 
-def send_solapi_alimtalk(receiver, template_id, message, link=None):
+def send_solapi_alimtalk(receiver, template_id, message, link=None, variables=None):
     if not SMS_API_KEY or not SMS_API_SECRET or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
         print("[Solapi Alimtalk] API Key, Secret, Sender Number, or Profile Key is missing. Skipping.", flush=True)
         return False
@@ -309,6 +309,9 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None):
         }
     }
     
+    if variables:
+        payload["message"]["kakaoOptions"]["variables"] = variables
+    
     if link:
         # 알림톡 버튼 정보 추가 (템플릿에 버튼이 정의되어 승인받은 경우에만 작동)
         payload["message"]["kakaoOptions"]["buttons"] = [
@@ -338,7 +341,7 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None):
         print(f"[Solapi Alimtalk] 에러 발생: {e}", flush=True)
         return False
 
-def dispatch_push_notification(receiver, title, body, link=None, template_type=None):
+def dispatch_push_notification(receiver, title, body, link=None, template_type=None, variables=None):
     if not receiver:
         return
     
@@ -416,7 +419,7 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
             if SMS_PROVIDER == "aligo":
                 send_aligo_alimtalk(clean_receiver, tpl_code, title, talk_message, link)
             elif SMS_PROVIDER == "solapi":
-                send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link)
+                send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link, variables)
         else:
             print(f"[Kakao Alimtalk] 템플릿 코드가 정의되지 않았습니다 (타입: {template_type}). 발송을 스킵합니다.", flush=True)
             
@@ -565,7 +568,18 @@ def check_pro_commissions():
                         title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
                         body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
                         pro_link = f"https://withpro.life/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
-                        dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_payment_request")
+                        dispatch_push_notification(
+                            pro_contact, 
+                            title, 
+                            body, 
+                            pro_link, 
+                            template_type="pro_payment_request",
+                            variables={
+                                "#{프로명}": pro_name,
+                                "#{일정}": lesson_date,
+                                "#{골프장}": golf_course
+                            }
+                        )
                         c.execute("UPDATE lesson_requests SET pro_notified = 1 WHERE id = ?", (req_id,))
 
                 # B. 라운딩 이틀 뒤 또는 그 이후 -> 미납 정지 처리 및 안내 (최종 정지 알림 단계인 2 미만일 때)
@@ -585,7 +599,18 @@ def check_pro_commissions():
                         title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
                         body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
                         pro_link = f"https://withpro.life/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
-                        dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
+                        dispatch_push_notification(
+                            pro_contact, 
+                            title, 
+                            body, 
+                            pro_link, 
+                            template_type="pro_commission_due",
+                            variables={
+                                "#{프로명}": pro_name,
+                                "#{일정}": lesson_date,
+                                "#{골프장}": golf_course
+                            }
+                        )
                         c.execute("UPDATE lesson_requests SET pro_notified = 2 WHERE id = ?", (req_id,))
 
             # 이용후기 발송 기능 제거됨
@@ -1031,7 +1056,17 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         customer_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={row['id']}"
-                        dispatch_push_notification(row['user_contact'], customer_title, customer_body, customer_link, template_type="match_success")
+                        dispatch_push_notification(
+                            row['user_contact'], 
+                            customer_title, 
+                            customer_body, 
+                            customer_link, 
+                            template_type="match_success",
+                            variables={
+                                "#{고객명}": row['user_name'] if row['user_name'] else '아마추어',
+                                "#{프로명}": pro_name
+                            }
+                        )
                 else:
                     c.execute("UPDATE lesson_requests SET status = '매칭 대기중', matched_pro_id = NULL WHERE id = ? AND matched_pro_id = ?", (req_id, pro_id))
                     
@@ -1099,7 +1134,17 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             proto = self.headers.get('X-Forwarded-Proto', 'http')
             host_header = self.headers.get('Host', 'localhost:8000')
             user_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={inserted_id}"
-            dispatch_push_notification(data.get('userContact'), title, body, user_link, template_type="lesson_requested")
+            dispatch_push_notification(
+                data.get('userContact'), 
+                title, 
+                body, 
+                user_link, 
+                template_type="lesson_requested",
+                variables={
+                    "#{고객명}": data.get('userName', '아마추어'),
+                    "#{골프장}": data.get('golfCourse', '')
+                }
+            )
             
             # 디스코드 알림 발송
             fields = {
@@ -1190,7 +1235,18 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         pro_link = f"{proto}://{host_header}/index.html?view=pro-accept&id={row['id']}&pro_id={pro_id}"
-                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body, pro_link, template_type="match_proposal")
+                        dispatch_push_notification(
+                            pro_row['contact'], 
+                            pro_title, 
+                            pro_body, 
+                            pro_link, 
+                            template_type="match_proposal",
+                            variables={
+                                "#{프로명}": pro_name,
+                                "#{골프장}": row['golf_course'],
+                                "#{일정}": f"{row['lesson_date']} {row['lesson_time']}"
+                            }
+                        )
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -1305,7 +1361,18 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         
                         pro_title = "⛳ 필드레슨 매칭 최종 확정!"
                         pro_body = f"[withPRO] {pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
-                        dispatch_push_notification(pro_row['contact'], pro_title, pro_body, template_type="match_confirmed")
+                        dispatch_push_notification(
+                            pro_row['contact'], 
+                            pro_title, 
+                            pro_body, 
+                            template_type="match_confirmed",
+                            variables={
+                                "#{프로명}": pro_name,
+                                "#{고객명}": customer_name,
+                                "#{골프장}": row['golf_course'],
+                                "#{일정}": f"{row['lesson_date']} {row['lesson_time']}"
+                            }
+                        )
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')

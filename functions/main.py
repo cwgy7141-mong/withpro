@@ -176,7 +176,7 @@ def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
         logging.error(f"[Aligo Alimtalk] Error: {e}")
         return False
 
-def send_solapi_alimtalk(receiver, template_id, message, link=None):
+def send_solapi_alimtalk(receiver, template_id, message, link=None, variables=None):
     if not SMS_API_KEY or not SMS_API_SECRET or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
         logging.info("[Solapi Alimtalk] Config missing. Skipping.")
         return False
@@ -211,6 +211,8 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None):
             }
         }
     }
+    if variables:
+        payload["message"]["kakaoOptions"]["variables"] = variables
     
     if link:
         clean_link = link
@@ -247,7 +249,7 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None):
         return False
 
 # Dispatch Push Notification helper
-def dispatch_push_notification(receiver, title, body, link=None, template_type=None):
+def dispatch_push_notification(receiver, title, body, link=None, template_type=None, variables=None):
     if not receiver:
         return
         
@@ -343,7 +345,7 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
                     if SMS_PROVIDER == "aligo":
                         send_aligo_alimtalk(clean_receiver, tpl_code, title, talk_message, link)
                     elif SMS_PROVIDER == "solapi":
-                        send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link)
+                        send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link, variables)
                 else:
                     logging.info(f"[Kakao Alimtalk] No template mapping for: {template_type}")
         except Exception as ex:
@@ -752,7 +754,17 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 customer_title = "🎉 필드레슨 매칭 최종 확정!"
                 customer_body = f"[withPRO] '{req_data.get('golf_course')}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다."
                 customer_link = f"https://withpro.kr/index.html?view=my-bookings&id={req_id}"
-                dispatch_push_notification(req_data.get('user_contact'), customer_title, customer_body, customer_link, template_type="match_success")
+                dispatch_push_notification(
+                    req_data.get('user_contact'), 
+                    customer_title, 
+                    customer_body, 
+                    customer_link, 
+                    template_type="match_success",
+                    variables={
+                        "#{고객명}": req_data.get('user_name', '아마추어'),
+                        "#{프로명}": pro_name
+                    }
+                )
             else:
                 # Reject match
                 req_ref.update({
@@ -824,7 +836,17 @@ def api(req: https_fn.Request) -> https_fn.Response:
             title = "⛳ 필드레슨 매칭 요청 접수 완료"
             body = f"[withPRO] {user_name}님, '{golf_course}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다."
             user_link = f"https://withpro.kr/index.html?view=my-bookings&id={inserted_id}"
-            dispatch_push_notification(user_contact, title, body, user_link, template_type="lesson_requested")
+            dispatch_push_notification(
+                user_contact, 
+                title, 
+                body, 
+                user_link, 
+                template_type="lesson_requested",
+                variables={
+                    "#{고객명}": user_name,
+                    "#{골프장}": golf_course
+                }
+            )
             
             # Discord Notify
             fields = {
@@ -899,7 +921,18 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 pro_title = "🏌️‍♂️ 새로운 필드레슨 배정 제안"
                 pro_body = f"[withPRO] {pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: {req_data.get('golf_course')}\n- 일정: {req_data.get('lesson_date')} {req_data.get('lesson_time')}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요."
                 pro_link = f"https://withpro.kr/index.html?view=pro-accept&id={req_id}&pro_id={pro_id}"
-                dispatch_push_notification(pro_data.get('contact'), pro_title, pro_body, pro_link, template_type="match_proposal")
+                dispatch_push_notification(
+                    pro_data.get('contact'), 
+                    pro_title, 
+                    pro_body, 
+                    pro_link, 
+                    template_type="match_proposal",
+                    variables={
+                        "#{프로명}": pro_name,
+                        "#{골프장}": req_data.get('golf_course', ''),
+                        "#{일정}": f"{req_data.get('lesson_date', '')} {req_data.get('lesson_time', '')}"
+                    }
+                )
                 
             return create_response({'status': 'success', 'message': '프로 배정 및 매칭 제안 수락 대기 처리가 완료되었습니다.'})
         except Exception as e:
@@ -1002,7 +1035,18 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 
                 pro_title = "⛳ 필드레슨 매칭 최종 확정!"
                 pro_body = f"[withPRO] {pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {req_data.get('golf_course')}\n- 일정: {req_data.get('lesson_date')} {req_data.get('lesson_time')}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
-                dispatch_push_notification(pro_row.get('contact'), pro_title, pro_body, template_type="match_confirmed")
+                dispatch_push_notification(
+                    pro_row.get('contact'), 
+                    pro_title, 
+                    pro_body, 
+                    template_type="match_confirmed",
+                    variables={
+                        "#{프로명}": pro_name,
+                        "#{고객명}": customer_name,
+                        "#{골프장}": req_data.get('golf_course', ''),
+                        "#{일정}": f"{req_data.get('lesson_date', '')} {req_data.get('lesson_time', '')}"
+                    }
+                )
                 
             return create_response({'status': 'success', 'message': '결제가 완료되었습니다.'})
         except Exception as e:
@@ -1417,7 +1461,18 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
                     title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
                     body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
                     pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
-                    dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_payment_request")
+                    dispatch_push_notification(
+                        pro_contact, 
+                        title, 
+                        body, 
+                        pro_link, 
+                        template_type="pro_payment_request",
+                        variables={
+                            "#{프로명}": pro_name,
+                            "#{일정}": lesson_date,
+                            "#{골프장}": golf_course
+                        }
+                    )
                     
                     db.collection("lesson_requests").document(req_id).update({"pro_notified": 1})
                     
@@ -1437,7 +1492,18 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
                     title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
                     body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
                     pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
-                    dispatch_push_notification(pro_contact, title, body, pro_link, template_type="pro_commission_due")
+                    dispatch_push_notification(
+                        pro_contact, 
+                        title, 
+                        body, 
+                        pro_link, 
+                        template_type="pro_commission_due",
+                        variables={
+                            "#{프로명}": pro_name,
+                            "#{일정}": lesson_date,
+                            "#{골프장}": golf_course
+                        }
+                    )
                     
                     db.collection("lesson_requests").document(req_id).update({"pro_notified": 2})
                     
