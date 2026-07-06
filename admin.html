@@ -785,6 +785,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 60px;">번호</th>
+                                <th style="width: 80px;">사진</th>
                                 <th style="width: 100px;">이름</th>
                                 <th style="width: 130px;">연락처</th>
                                 <th style="width: 150px;">자격증/회원번호</th>
@@ -1612,7 +1613,7 @@
             renderProsTable: function(dataList) {
                 const tbody = document.querySelector('#pros-tab .table-body');
                 if (dataList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">🏌️‍♂️</span>신청된 프로 회원 내역이 없습니다.</div></td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><span class="empty-icon">🏌️‍♂️</span>신청된 프로 회원 내역이 없습니다.</div></td></tr>`;
                     return;
                 }
                 tbody.innerHTML = dataList.map((item, idx) => {
@@ -1631,9 +1632,14 @@
                         actionHtml = `<button class="action-btn-sm" style="background-color: var(--primary-color); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; transition: var(--transition);" onclick="adminApp.approvePro('${item.id}')">정지 해제 (승인)</button>`;
                     }
 
+                    const profilePicHtml = item.profile_pic 
+                        ? `<img src="${item.profile_pic}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 1.5px solid var(--border-color); cursor: pointer; transition: transform 0.2s;" onclick="adminApp.zoomImage('${item.profile_pic}', '${this.escapeHtml(item.name || '프로')}')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">`
+                        : `<div style="width: 50px; height: 50px; border-radius: 8px; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1.5px solid var(--border-color); color: #94a3b8;">🏌️‍♂️</div>`;
+
                     return `
                         <tr>
                             <td><strong>${dataList.length - idx}</strong></td>
+                            <td style="text-align: center; vertical-align: middle;">${profilePicHtml}</td>
                             <td><strong>${this.escapeHtml(item.name || '프로')}</strong></td>
                             <td>📞 ${this.escapeHtml(item.contact || '010-0000-0000')}</td>
                             <td>
@@ -1956,6 +1962,26 @@
                 this.currentMatchReqId = null;
             },
 
+            zoomImage: function(imgSrc, name) {
+                const modal = document.getElementById('image-modal');
+                const modalImg = document.getElementById('modal-zoomed-img');
+                const modalTitle = document.getElementById('image-modal-title');
+                if (modal && modalImg) {
+                    modalImg.src = imgSrc;
+                    if (modalTitle) {
+                        modalTitle.innerText = `${name} 프로 프로필 사진`;
+                    }
+                    modal.style.display = 'flex';
+                }
+            },
+
+            closeImageModal: function() {
+                const modal = document.getElementById('image-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            },
+
             confirmMatchRequest: async function() {
                 const selectElement = document.getElementById('match-pro-select');
                 const proId = selectElement.value;
@@ -2134,6 +2160,15 @@
                 <button onclick="adminApp.closeMatchModal()" style="background-color: transparent; border: 1.5px solid var(--border-color); color: var(--text-color); padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--transition);">취소</button>
                 <button onclick="adminApp.confirmMatchRequest()" style="background-color: var(--primary-color); border: none; color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--transition);" onmouseover="this.style.backgroundColor='var(--primary-hover)'" onmouseout="this.style.backgroundColor='var(--primary-color)'">배정 및 매칭완료</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 이미지 크게보기 모달 -->
+    <div id="image-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); z-index: 1200; align-items: center; justify-content: center;" onclick="adminApp.closeImageModal()">
+        <div style="position: relative; max-width: 90%; max-height: 90%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: modalFadeIn 0.3s ease-out;" onclick="event.stopPropagation()">
+            <img id="modal-zoomed-img" src="" style="max-width: 100%; max-height: 75vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 3px solid white; object-fit: contain;">
+            <div style="color: white; margin-top: 15px; font-weight: 700; font-size: 15px;" id="image-modal-title">프로필 사진</div>
+            <span onclick="adminApp.closeImageModal()" style="position: absolute; top: -45px; right: 0; color: white; font-size: 35px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">✕</span>
         </div>
     </div>
     
