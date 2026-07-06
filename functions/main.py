@@ -1407,7 +1407,10 @@ def api(req: https_fn.Request) -> https_fn.Response:
 # ==========================================
 # ⏰ BACKGROUND SCHEDULED FUNCTION (check_pro_commissions)
 # ==========================================
-@scheduler_fn.on_schedule(schedule="every 60 minutes")
+@scheduler_fn.on_schedule(
+    schedule="0 9 * * *",
+    timezone=scheduler_fn.Timezone("Asia/Seoul")
+)
 def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
     logging.info("[check_pro_commissions_scheduled] Scheduler triggered.")
     try:
