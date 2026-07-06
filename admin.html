@@ -1247,8 +1247,11 @@
 
             init: function() {
                 // 엔터 입력 시 로그인 처리 연동
-                document.getElementById('passcode-input').addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') adminApp.login();
+                document.getElementById('passcode-input').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.keyCode === 13) {
+                        e.preventDefault();
+                        adminApp.login();
+                    }
                 });
 
                 // 1. URL 쿼리 파라미터에서 key 추출
