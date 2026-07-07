@@ -555,13 +555,15 @@ def api(req: https_fn.Request) -> https_fn.Response:
             matches = []
             match_docs = db.collection("lesson_requests")\
                            .where("matched_pro_id", "==", pro_doc.id)\
-                           .order_by("created_at", direction=firestore.Query.DESCENDING)\
                            .get()
                            
             for m in match_docs:
                 md = m.to_dict()
                 md["id"] = m.id
                 matches.append(md)
+            
+            # Sort in memory by created_at descending
+            matches.sort(key=lambda x: x.get("created_at", ""), reverse=True)
                 
             return create_response({
                 'profile': pro_data,
