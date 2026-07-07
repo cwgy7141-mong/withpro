@@ -1529,6 +1529,16 @@
                     let statusBadge = '';
                     let actionHtml = '';
 
+                    let proInfoHtml = '';
+                    if (item.matched_pro_id) {
+                        const matchedPro = this.cachedData.pro_users.find(pro => String(pro.id) === String(item.matched_pro_id));
+                        if (matchedPro) {
+                            proInfoHtml = `<div style="font-size: 11.5px; color: var(--primary-color); font-weight: 700; margin-top: 5px; background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 3px 6px; border-radius: 4px; display: block; width: fit-content;">🏌️‍♂️ 프로: ${this.escapeHtml(matchedPro.name)} (${this.escapeHtml(matchedPro.contact || '-')})</div>`;
+                        } else {
+                            proInfoHtml = `<div style="font-size: 11.5px; color: #b91c1c; font-weight: 700; margin-top: 5px; background-color: #fef2f2; border: 1px solid #fca5a5; padding: 3px 6px; border-radius: 4px; display: block; width: fit-content;">🏌️‍♂️ 프로: 존재하지 않음 (ID: ${this.escapeHtml(item.matched_pro_id)})</div>`;
+                        }
+                    }
+
                     if (status === '매칭 대기중') {
                         statusBadge = `<span class="badge-chip" style="background-color: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; font-size: 11px;">매칭 대기중</span>`;
                         actionHtml = `<button class="action-btn-sm" style="background-color: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; transition: var(--transition);" onclick="adminApp.openMatchModal('${item.id}')">매칭 완료 처리</button>`;
@@ -1595,6 +1605,7 @@
                                 <strong style="font-size: 14px; color: var(--text-color);">${this.escapeHtml(item.user_name || '이름 없음')}</strong>
                                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500;">📞 ${this.escapeHtml(item.user_contact || '-')}</div>
                                 <div style="font-size: 11px; color: #9ca3af; margin-top: 3px; font-weight: 500;">(ID: ${this.escapeHtml(item.user_id)})</div>
+                                ${proInfoHtml}
                                 ${reviewHtml}
                             </td>
                             <td><strong>${this.escapeHtml(item.golf_course)}</strong></td>
