@@ -203,7 +203,6 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None, variables=No
         "message": {
             "to": receiver,
             "from": SMS_SENDER_NUMBER,
-            "text": message,
             "type": "ATA",
             "kakaoOptions": {
                 "pfId": KAKAO_SENDER_KEY,
@@ -215,18 +214,12 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None, variables=No
         payload["message"]["kakaoOptions"]["variables"] = variables
     
     if link:
-        clean_link = link
-        if clean_link.startswith("https://"):
-            clean_link = clean_link[8:]
-        elif clean_link.startswith("http://"):
-            clean_link = clean_link[7:]
-            
         payload["message"]["kakaoOptions"]["buttons"] = [
             {
                 "buttonName": "자세히 보기",
                 "buttonType": "WL",
-                "linkMo": clean_link,
-                "linkPc": clean_link
+                "linkMo": link,
+                "linkPc": link
             }
         ]
         
@@ -762,7 +755,8 @@ def api(req: https_fn.Request) -> https_fn.Response:
                     template_type="match_success",
                     variables={
                         "#{고객명}": req_data.get('user_name', '아마추어'),
-                        "#{프로명}": pro_name
+                        "#{프로명}": pro_name,
+                        "#{프로연락처}": pro_contact
                     }
                 )
             else:
@@ -1043,6 +1037,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
                     variables={
                         "#{프로명}": pro_name,
                         "#{고객명}": customer_name,
+                        "#{고객연락처}": customer_contact,
                         "#{골프장}": req_data.get('golf_course', ''),
                         "#{일정}": f"{req_data.get('lesson_date', '')} {req_data.get('lesson_time', '')}"
                     }

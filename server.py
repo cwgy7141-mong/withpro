@@ -300,7 +300,6 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None, variables=No
         "message": {
             "to": receiver,
             "from": SMS_SENDER_NUMBER,
-            "text": message,  # 알림톡 실패 시 대체 발송되는 LMS/SMS 메시지 내용
             "type": "ATA",
             "kakaoOptions": {
                 "pfId": KAKAO_SENDER_KEY,
@@ -1064,7 +1063,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                             template_type="match_success",
                             variables={
                                 "#{고객명}": row['user_name'] if row['user_name'] else '아마추어',
-                                "#{프로명}": pro_name
+                                "#{프로명}": pro_name,
+                                "#{프로연락처}": pro_contact
                             }
                         )
                 else:
@@ -1369,6 +1369,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                             variables={
                                 "#{프로명}": pro_name,
                                 "#{고객명}": customer_name,
+                                "#{고객연락처}": customer_contact,
                                 "#{골프장}": row['golf_course'],
                                 "#{일정}": f"{row['lesson_date']} {row['lesson_time']}"
                             }
