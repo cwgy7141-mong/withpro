@@ -1627,7 +1627,7 @@ const app = {
                                         <p style="font-size: 12px; color: #b91c1c; font-weight: 700; margin: 0 0 8px 0; line-height: 1.4;">
                                             ⚠️ 라운딩 완료 다음 날 수수료 50,000원 입금이 완료되지 않으면 파트너 프로 활동이 정지됩니다.
                                         </p>
-                                        <button class="btn btn-primary full-width" style="padding: 10px; font-size: 13px; background-color: #dc2626; border: none; font-weight: 700; width: 100%; box-sizing: border-box;" onclick="app.payProCommission(${match.id}, '${match.user_name || '골퍼'}')">
+                                        <button class="btn btn-primary full-width" style="padding: 10px; font-size: 13px; background-color: #dc2626; border: none; font-weight: 700; width: 100%; box-sizing: border-box;" onclick="app.payProCommission('${match.id}', '${match.user_name || '골퍼'}')">
                                             수수료 50,000원 결제하기
                                         </button>
                                     </div>
@@ -1639,7 +1639,7 @@ const app = {
                                         <p style="font-size: 12px; color: #166534; font-weight: 700; margin: 0 0 8px 0; line-height: 1.4;">
                                             ℹ️ 라운딩 예정 건입니다. 수수료를 미리 결제하실 수 있습니다.
                                         </p>
-                                        <button class="btn btn-primary full-width" style="padding: 10px; font-size: 13px; background-color: var(--primary-color); border: none; font-weight: 700; width: 100%; box-sizing: border-box;" onclick="app.payProCommission(${match.id}, '${match.user_name || '골퍼'}')">
+                                        <button class="btn btn-primary full-width" style="padding: 10px; font-size: 13px; background-color: var(--primary-color); border: none; font-weight: 700; width: 100%; box-sizing: border-box;" onclick="app.payProCommission('${match.id}', '${match.user_name || '골퍼'}')">
                                             수수료 50,000원 결제하기
                                         </button>
                                     </div>
