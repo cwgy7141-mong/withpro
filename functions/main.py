@@ -1453,8 +1453,8 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
             lesson_date = row.get("lesson_date")
             golf_course = row.get("golf_course")
             
-            # Case A: Rounding was yesterday -> Send first payment reminder
-            if lesson_date == yesterday_str:
+            # Process only if rounding was yesterday or earlier
+            if lesson_date <= yesterday_str:
                 if pro_notified == 0:
                     title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
                     body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
@@ -1471,20 +1471,18 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
                             "#{골프장}": golf_course
                         }
                     )
-                    
                     db.collection("lesson_requests").document(req_id).update({"pro_notified": 1})
                     
-            # Case B: Rounding was 2+ days ago -> Suspend pro profile and send critical warning
-            elif lesson_date < yesterday_str:
-                if pro_notified < 2:
+                elif pro_notified == 1:
                     # Suspend pro
                     if pro_status != "정지":
                         db.collection("pro_users").document(str(pro_id)).update({"status": "정지"})
                         send_discord_notification("🚨 파트너 프로 활동 정지 (수수료 미납)", {
-                            "프로명": pro_name,
-                            "연락처": pro_contact,
-                            "미납 라운딩": f"{golf_course} ({lesson_date})",
-                            "사유": "라운딩 이틀 뒤 수수료(5만원) 미납으로 인한 정지"
+                            "pro_name": pro_name,
+                            "pro_contact": pro_contact,
+                            "golf_course": golf_course,
+                            "lesson_date": lesson_date,
+                            "reason": "수수료(5만원) 미납으로 인한 정지"
                         })
                         
                     title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
@@ -1502,7 +1500,6 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
                             "#{골프장}": golf_course
                         }
                     )
-                    
                     db.collection("lesson_requests").document(req_id).update({"pro_notified": 2})
                     
     except Exception as e:
