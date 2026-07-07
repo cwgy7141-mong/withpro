@@ -1419,15 +1419,20 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
         today_str = now_kst.strftime("%Y-%m-%d")
         yesterday_str = (now_kst - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         
-        # Retrieve lesson requests that are finalized, where rounding was today or earlier, and pro has not paid commission.
+        # Retrieve lesson requests that are finalized (filter by date in memory to avoid Firestore composite index requirement)
         lessons_ref = db.collection("lesson_requests")\
                         .where("status", "==", "결제완료")\
-                        .where("lesson_date", "<=", today_str)\
                         .get()
                         
         for doc in lessons_ref:
             row = doc.to_dict()
             req_id = doc.id
+            lesson_date = row.get("lesson_date")
+            
+            # Skip if lesson date is in the future
+            if not lesson_date or lesson_date > today_str:
+                continue
+                
             pro_pay_status = row.get("pro_pay_status")
             
             # Check if pro commission is unpaid
