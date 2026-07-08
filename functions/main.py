@@ -766,6 +766,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
                     template_type="match_success",
                     variables={
                         "#{고객명}": req_data.get('user_name', '아마추어'),
+                        "#{골프장}": req_data.get('golf_course'),
                         "#{프로명}": pro_name,
                         "#{프로연락처}": pro_contact
                     }

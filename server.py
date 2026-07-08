@@ -1074,6 +1074,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                             template_type="match_success",
                             variables={
                                 "#{고객명}": row['user_name'] if row['user_name'] else '아마추어',
+                                "#{골프장}": row['golf_course'],
                                 "#{프로명}": pro_name,
                                 "#{프로연락처}": pro_contact
                             }
