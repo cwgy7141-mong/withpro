@@ -396,6 +396,14 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
         talk_message = f"[{title}]\n{body}"
         tpl_code = None
         
+        # 버튼 변수 #{link} 및 #{url} 추가 주입 (프로토콜 제외한 상대 주소로 전달)
+        if link:
+            if not variables:
+                variables = {}
+            clean_link = link.replace("https://", "").replace("http://", "")
+            variables["#{link}"] = clean_link
+            variables["#{url}"] = clean_link
+        
         # 템플릿 코드 매칭
         if template_type == "lesson_requested":
             tpl_code = KAKAO_TPL_LESSON_REQUESTED
