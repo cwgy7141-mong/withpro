@@ -70,7 +70,7 @@ def send_discord_notification(title, fields):
         "color": 736558,
         "fields": [],
         "footer": {
-            "text": "withPRO 실시간 알림 시스템"
+            "text": "올앱 실시간 알림 시스템"
         }
     }
     
@@ -260,7 +260,7 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
             }
             if link:
                 fields["이동 링크"] = link
-            send_discord_notification(f"📱 [withPRO App Push] {title}", fields)
+            send_discord_notification(f"📱 [올앱 App Push] {title}", fields)
             
             # Formulate potential formats for the contact query
             formats = [receiver]
@@ -519,7 +519,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 user_phone_clean = clean_phone(user_contact)
                 # Find if coupon with code WITHPRO30 was already issued to this user
                 issued_coupons = db.collection("lesson_requests")\
-                                   .where("issued_coupon_code", "==", "WITHPRO30")\
+                                   .where("issued_coupon_code", "==", "ALLAPP30")\
                                    .get()
                                    
                 for ic in issued_coupons:
@@ -747,7 +747,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 
                 # App Push to amateur customer
                 customer_title = "🎉 필드레슨 매칭 최종 확정!"
-                customer_body = f"[withPRO] '{req_data.get('golf_course')}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다."
+                customer_body = f"[올앱] '{req_data.get('golf_course')}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다."
                 customer_link = f"https://withpro.kr/index.html?view=my-bookings&id={req_id}"
                 dispatch_push_notification(
                     req_data.get('user_contact'), 
@@ -830,7 +830,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 
             # App Push to amateur customer
             title = "⛳ 필드레슨 매칭 요청 접수 완료"
-            body = f"[withPRO] {user_name}님, '{golf_course}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다."
+            body = f"[올앱] {user_name}님, '{golf_course}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다."
             user_link = f"https://withpro.kr/index.html?view=my-bookings&id={inserted_id}"
             dispatch_push_notification(
                 user_contact, 
@@ -859,7 +859,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             return create_response({
                 'status': 'success',
                 'id': inserted_id,
-                'message': '⛳ 필드레슨 매칭 신청이 성공적으로 접수되었습니다!\n\nwithPRO를 믿고 소중한 라운딩 정보를 등록해 주셔서 진심으로 감사드립니다.\n\n골퍼님의 일정과 지역에 꼭 맞는 최고의 KPGA/KLPGA 프로님을 매칭하기 위해 최선을 다하고 있습니다. 매칭이 성사되는 대로 앱 푸시 알림을 통해 가장 먼저 기쁜 소식을 전해 드리겠습니다.\n\n오늘도 기분 좋은 하루 보내시고, 설레는 마음으로 라운딩을 준비해 보세요. 감사합니다!'
+                'message': '⛳ 필드레슨 매칭 신청이 성공적으로 접수되었습니다!\n\n올앱을 믿고 소중한 라운딩 정보를 등록해 주셔서 진심으로 감사드립니다.\n\n골퍼님의 일정과 지역에 꼭 맞는 최고의 KPGA/KLPGA 프로님을 매칭하기 위해 최선을 다하고 있습니다. 매칭이 성사되는 대로 앱 푸시 알림을 통해 가장 먼저 기쁜 소식을 전해 드리겠습니다.\n\n오늘도 기분 좋은 하루 보내시고, 설레는 마음으로 라운딩을 준비해 보세요. 감사합니다!'
             })
         except Exception as e:
             return create_response({'error': str(e)}, 500)
@@ -915,7 +915,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             # Send propose push to pro
             if pro_data.get('contact'):
                 pro_title = "🏌️‍♂️ 새로운 필드레슨 배정 제안"
-                pro_body = f"[withPRO] {pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: {req_data.get('golf_course')}\n- 일정: {req_data.get('lesson_date')} {req_data.get('lesson_time')}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요."
+                pro_body = f"[올앱] {pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: {req_data.get('golf_course')}\n- 일정: {req_data.get('lesson_date')} {req_data.get('lesson_time')}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요."
                 pro_link = f"https://withpro.kr/index.html?view=pro-accept&id={req_id}&pro_id={pro_id}"
                 dispatch_push_notification(
                     pro_data.get('contact'), 
@@ -1030,7 +1030,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 customer_contact = req_data.get('user_contact', '-')
                 
                 pro_title = "⛳ 필드레슨 매칭 최종 확정!"
-                pro_body = f"[withPRO] {pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {req_data.get('golf_course')}\n- 일정: {req_data.get('lesson_date')} {req_data.get('lesson_time')}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
+                pro_body = f"[올앱] {pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {req_data.get('golf_course')}\n- 일정: {req_data.get('lesson_date')} {req_data.get('lesson_time')}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
                 dispatch_push_notification(
                     pro_row.get('contact'), 
                     pro_title, 
@@ -1306,7 +1306,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
             key = data.get('key')
             token = data.get('token')
             title = data.get('title', '테스트 푸시')
-            body = data.get('body', '이것은 withPRO 실시간 테스트 알림입니다.')
+            body = data.get('body', '이것은 올앱 실시간 테스트 알림입니다.')
             
             if key != ADMIN_SECRET_KEY:
                 return create_response({'error': 'Unauthorized'}, 401)
@@ -1463,8 +1463,8 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
             # Process only if rounding was yesterday or earlier
             if lesson_date <= yesterday_str:
                 if pro_notified == 0:
-                    title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
-                    body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
+                    title = "📢 [올앱] 라운딩 완료 및 플랫폼 수수료 결제 안내"
+                    body = f"[올앱] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
                     pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
                     dispatch_push_notification(
                         pro_contact, 
@@ -1492,8 +1492,8 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
                             "reason": "수수료(5만원) 미납으로 인한 정지"
                         })
                         
-                    title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
-                    body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
+                    title = "🚨 [올앱] 라운딩 수수료 미납 및 파트너 정지 안내"
+                    body = f"[올앱] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
                     pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
                     dispatch_push_notification(
                         pro_contact, 
