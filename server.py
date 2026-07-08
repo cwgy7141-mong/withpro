@@ -301,6 +301,7 @@ def send_solapi_alimtalk(receiver, template_id, message, link=None, variables=No
             "to": receiver,
             "from": SMS_SENDER_NUMBER,
             "type": "ATA",
+            "text": message,
             "kakaoOptions": {
                 "pfId": KAKAO_SENDER_KEY,
                 "templateId": template_id
