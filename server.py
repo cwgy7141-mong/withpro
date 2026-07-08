@@ -354,7 +354,7 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
     }
     if link:
         fields["이동 링크"] = link
-    send_discord_notification(f"📱 [withPRO App Push] {title}", fields)
+    send_discord_notification(f"📱 [올앱 App Push] {title}", fields)
     
     # 1. 24시간 실시간 FCM 진짜 앱 푸시 전송 (Firebase Admin SDK 연동 상태 시)
     if FIREBASE_INIT:
@@ -424,7 +424,7 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
             
     # 가상 앱 PUSH API 연동 콘솔 시뮬레이션 출력
     print(f"\n==================================================", flush=True)
-    print(f"🔵 [withPRO App Push API 호출]", flush=True)
+    print(f"🔵 [올앱 App Push API 호출]", flush=True)
     print(f"수신 대상: {clean_receiver} (앱 인증 유저)", flush=True)
     print(f"알림 타이틀: {title}", flush=True)
     print(f"알림 바디: {body}", flush=True)
@@ -480,7 +480,7 @@ def send_discord_notification(title, fields):
         "color": 736558,
         "fields": [],
         "footer": {
-            "text": "withPRO 실시간 알림 시스템"
+            "text": "올앱 실시간 알림 시스템"
         }
     }
     
@@ -564,8 +564,8 @@ def check_pro_commissions():
                     # Process only if rounding was yesterday or earlier
                     if lesson_date <= yesterday_str:
                         if pro_notified == 0:
-                            title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
-                            body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
+                            title = "📢 [올앱] 라운딩 완료 및 플랫폼 수수료 결제 안내"
+                            body = f"[올앱] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
                             pro_link = f"https://withpro.life/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
                             dispatch_push_notification(
                                 pro_contact, 
@@ -594,8 +594,8 @@ def check_pro_commissions():
                                 })
 
                             # 2. 미납 정지 알림 발송
-                            title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
-                            body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
+                            title = "🚨 [올앱] 라운딩 수수료 미납 및 파트너 정지 안내"
+                            body = f"[올앱] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
                             pro_link = f"https://withpro.life/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
                             dispatch_push_notification(
                                 pro_contact, 
@@ -790,7 +790,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                             return "".join([ch for ch in phone_str if ch.isdigit()])
                         user_phone_clean = clean_phone(user_contact)
                         
-                        c.execute("SELECT user_contact FROM lesson_requests WHERE issued_coupon_code = 'WITHPRO30'")
+                        c.execute("SELECT user_contact FROM lesson_requests WHERE issued_coupon_code = 'ALLAPP30'")
                         all_issued = c.fetchall()
                         for r in all_issued:
                             if r['user_contact'] and clean_phone(r['user_contact']) == user_phone_clean:
@@ -1053,7 +1053,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         # 아마추어 고객 앱 PUSH 발송
                         pro_contact = pro_row['contact'] if pro_row else "-"
                         customer_title = "🎉 필드레슨 매칭 최종 확정!"
-                        customer_body = f"[withPRO] '{row['golf_course']}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다."
+                        customer_body = f"[올앱] '{row['golf_course']}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다."
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         customer_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={row['id']}"
@@ -1132,7 +1132,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             
             # 앱 푸시 알림 발송
             title = "⛳ 필드레슨 매칭 요청 접수 완료"
-            body = f"[withPRO] {data.get('userName', '아마추어')}님, '{data.get('golfCourse')}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다."
+            body = f"[올앱] {data.get('userName', '아마추어')}님, '{data.get('golfCourse')}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다."
             proto = self.headers.get('X-Forwarded-Proto', 'http')
             host_header = self.headers.get('Host', 'localhost:8000')
             user_link = f"{proto}://{host_header}/index.html?view=my-bookings&id={inserted_id}"
@@ -1162,7 +1162,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             # 1일(86400초) 뒤에 매칭 실패 알림 전송 (시뮬레이션)
             def send_fail_notification():
                 print(f"\n==================================================")
-                print(f"[withPRO PUSH API 호출 - 매칭 실패] 대상: {data.get('userName', '아마추어')}님 ({data.get('userContact', '010-0000-0000')})")
+                print(f"[올앱 PUSH API 호출 - 매칭 실패] 대상: {data.get('userName', '아마추어')}님 ({data.get('userContact', '010-0000-0000')})")
                 print(f"메시지: '현재 매칭가능한 프로님이 안계십니다'")
                 print(f"==================================================\n")
             
@@ -1233,7 +1233,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                     # 프로에게 매칭 제안 앱 PUSH 전송
                     if pro_row and pro_row['contact']:
                         pro_title = "🏌️‍♂️ 새로운 필드레슨 배정 제안"
-                        pro_body = f"[withPRO] {pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요."
+                        pro_body = f"[올앱] {pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요."
                         proto = self.headers.get('X-Forwarded-Proto', 'http')
                         host_header = self.headers.get('Host', 'localhost:8000')
                         pro_link = f"{proto}://{host_header}/index.html?view=pro-accept&id={row['id']}&pro_id={pro_id}"
@@ -1362,7 +1362,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         customer_contact = row['user_contact'] if row['user_contact'] else "-"
                         
                         pro_title = "⛳ 필드레슨 매칭 최종 확정!"
-                        pro_body = f"[withPRO] {pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
+                        pro_body = f"[올앱] {pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: {customer_name}\n- 고객 연락처: {customer_contact}\n- 골프장: {row['golf_course']}\n- 일정: {row['lesson_date']} {row['lesson_time']}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
                         dispatch_push_notification(
                             pro_row['contact'], 
                             pro_title, 
@@ -1727,7 +1727,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             key = data.get('key')
             token = data.get('token')
             title = data.get('title', '테스트 푸시')
-            body = data.get('body', '이것은 withPRO 실시간 테스트 알림입니다.')
+            body = data.get('body', '이것은 올앱 실시간 테스트 알림입니다.')
             
             if key != ADMIN_SECRET_KEY:
                 self.send_response(401)

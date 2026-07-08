@@ -136,7 +136,7 @@
 
         const title = document.createElement('div');
         title.className = 'withpro-alert-title';
-        title.innerText = 'withPRO의 메시지';
+        title.innerText = '올앱의 메시지';
 
         header.appendChild(icon);
         header.appendChild(title);
@@ -215,7 +215,7 @@
 
             const title = document.createElement('div');
             title.className = 'withpro-alert-title';
-            title.innerText = 'withPRO의 메시지';
+            title.innerText = '올앱의 메시지';
 
             header.appendChild(icon);
             header.appendChild(title);
@@ -680,7 +680,7 @@ const app = {
             // 회원 가입 완료 시 자동 로그인 처리 및 My Page 진입 유도
             localStorage.setItem('withpro_pro_cert', cert_number);
             
-            alert("프로 회원 가입 신청이 성공적으로 접수되었습니다! ⛳\n\n제출해 주신 회원 자격 심사(KPGA/KLPGA 회원 인증) 완료 후 즉시 정식으로 레슨 매칭 활동이 가능합니다.\n\n승인 심사는 통상 1~2영업일이 소요되며, 완료되는 대로 등록된 연락처로 신속히 안내해 드리겠습니다. withPRO 파트너로 함께해 주셔서 진심으로 감사드립니다.");
+            alert("프로 회원 가입 신청이 성공적으로 접수되었습니다! ⛳\n\n제출해 주신 회원 자격 심사(KPGA/KLPGA 회원 인증) 완료 후 즉시 정식으로 레슨 매칭 활동이 가능합니다.\n\n승인 심사는 통상 1~2영업일이 소요되며, 완료되는 대로 등록된 연락처로 신속히 안내해 드리겠습니다. 올앱 파트너로 함께해 주셔서 진심으로 감사드립니다.");
             
             // Firebase FCM 알림 연동 및 토큰 저장 시도
             app.initFirebase(contact, 'pro');
@@ -1276,7 +1276,7 @@ const app = {
             pg: pgProvider,
             pay_method: payMethodCode,
             merchant_uid: merchantUid,
-            name: "withPRO 필드레슨 서비스 이용료",
+            name: "올앱 필드레슨 서비스 이용료",
             amount: amount,
             buyer_name: booking.user_name,
             buyer_tel: booking.user_contact,
@@ -1716,7 +1716,7 @@ const app = {
             pg: app.DEFAULT_PG_PROVIDER,
             pay_method: 'card',
             merchant_uid: merchantUid,
-            name: `withPRO 프로 라운딩 수수료 (${amateurName}님 매칭 건)`,
+            name: `올앱 프로 라운딩 수수료 (${amateurName}님 매칭 건)`,
             amount: 50000,
             m_redirect_url: window.location.origin + "/index.html?view=pro-mypage"
         }, async function(rsp) {
@@ -2089,7 +2089,7 @@ const app = {
             title = '개인정보 수집 및 이용 동의';
             content = `
                 <h4>1. 개인정보 수집 목적</h4>
-                <p>withPRO는 레슨 매칭 서비스 제공, 당사자 간 연락 지원, 알림 서비스(SMS, Push) 발송을 위해 개인정보를 수집합니다.</p>
+                <p>올앱은 레슨 매칭 서비스 제공, 당사자 간 연락 지원, 알림 서비스(SMS, Push) 발송을 위해 개인정보를 수집합니다.</p>
                 
                 <h4>2. 수집하는 개인정보 항목</h4>
                 <p>필수 항목: 이름, 연락처(휴대폰 번호), 라운딩 골프장, 날짜 및 시간</p>
@@ -2104,7 +2104,7 @@ const app = {
             title = '개인정보 수집 및 이용 동의';
             content = `
                 <h4>1. 개인정보 수집 목적</h4>
-                <p>withPRO는 프로 파트너 등록 심사, 레슨 매칭 제안 및 알림(SMS, Push) 발송, 아마추어 예약 고객과의 레슨 일정 조율 및 비상 시 긴급 연락 지원을 위해 개인정보를 수집합니다.</p>
+                <p>올앱은 프로 파트너 등록 심사, 레슨 매칭 제안 및 알림(SMS, Push) 발송, 아마추어 예약 고객과의 레슨 일정 조율 및 비상 시 긴급 연락 지원을 위해 개인정보를 수집합니다.</p>
                 
                 <h4>2. 수집하는 개인정보 항목</h4>
                 <p>필수 항목: 이름, 연락처(휴대폰 번호), 간편 비밀번호(핀번호), 자격증 종류 및 회원번호, 프로필 사진, 활동 가능 지역 및 요일</p>
@@ -2113,7 +2113,7 @@ const app = {
                 <p>수집된 개인정보는 서비스 제공 목적이 달성되거나 파트너 탈퇴 또는 요구 시 즉시 안전하게 파기됩니다. 단, 관련 법령의 규정에 따라 보존할 필요가 있는 경우 해당 기간 동안 안전하게 분리 보관됩니다.</p>
                 
                 <h4>4. 동의 거부 권리</h4>
-                <p>귀하는 개인정보 수집 및 이용에 동의하지 않을 권리가 있습니다. 단, 동의하지 않으실 경우 withPRO 파트너 프로 등록 및 필드레슨 매칭 제안 수령이 불가능합니다.</p>
+                <p>귀하는 개인정보 수집 및 이용에 동의하지 않을 권리가 있습니다. 단, 동의하지 않으실 경우 올앱 파트너 프로 등록 및 필드레슨 매칭 제안 수령이 불가능합니다.</p>
             `;
         }
         
