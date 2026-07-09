@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>환불 규정 - 올앱</title>
+    <link rel="canonical" href="https://withpro.kr/refund.html">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-color: #10b981;
+            --font-outfit: 'Outfit', 'Inter', 'Noto Sans KR', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-outfit);
+            line-height: 1.7;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .logo span {
+            color: var(--accent-color);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 10px;
+        }
+
+        .date {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        section {
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background-color: var(--accent-color);
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        p {
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            h2 {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">올<span>앱</span></div>
+            <h1>환불 규정</h1>
+            <p class="date">시행일자: 2026년 7월 9일</p>
+        </header>
+
+        <section>
+            <h2>제1조 (목적)</h2>
+            <p>본 규정은 올앱(이하 '회사')이 제공하는 필드레슨 실시간 매칭 서비스(https://withpro.kr, 이하 '서비스')와 관련하여 이용회원의 이용료 및 수수료 환불 조건과 절차를 규정함을 목적으로 합니다.</p>
+        </section>
+
+        <section>
+            <h2>제2조 (환불 원칙 및 대상)</h2>
+            <ul>
+                <li><strong>일반 회원(골퍼)</strong>: 일반 회원은 매칭 예약 시 별도의 사전 예약금(보증금) 결제가 필요하지 않으며, 매칭 성공 후 라운딩이 완료된 시점에 프로 회원에게 직접 레슨비를 정산(현장 직거래)하므로 회사에 대하여 환불을 청구할 수 있는 대상이 존재하지 않습니다.</li>
+                <li><strong>프로 회원(파트너)</strong>: 프로 회원이 매칭 확정 및 라운딩 완료 후 납부하는 플랫폼 이용 수수료(50,000원)는 <strong>비실물 서비스의 매칭 중개 서비스 선제공에 따른 비용 결제이므로 원칙적으로 환불이 불가능</strong>합니다.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>제3조 (예외적 환불 처리)</h2>
+            <p>제2조에도 불구하고, 다음 각 호의 어느 하나에 해당하는 경우에는 회사가 환불 처리를 진행합니다.</p>
+            <ul>
+                <li>회사의 서비스 시스템 오류 또는 결제 대행사(PG)의 전산 오류로 인하여 중복 결제되거나 초과 결제된 경우: 초과된 금액 또는 오류 결제 금액 전액 환불</li>
+                <li>회사의 귀책 사유로 인하여 정상적인 서비스 이용이 불가능하였음이 객관적으로 증명된 경우: 해당 이용 수수료 전액 환불</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>제4조 (환불 신청 및 절차)</h2>
+            <ul>
+                <li>예외적 환불 사유가 발생한 경우, 회원은 고객센터 또는 이메일(withpro.app@gmail.com)을 통해 결제 내역 및 증빙자료와 함께 환불을 신청할 수 있습니다.</li>
+                <li>회사는 환불 신청 접수 후 영업일 기준 3일 이내에 환불 사유를 검토하고, 환불 처리가 결정된 경우 결제 대행사(PG)를 통해 결제 취소 또는 환불을 진행합니다.</li>
+                <li>신용카드 결제 취소의 경우 카드사 사정에 따라 영업일 기준 3~5일이 추가 소요될 수 있습니다.</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p>© 올앱. All Rights Reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
