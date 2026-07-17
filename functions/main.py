@@ -823,6 +823,7 @@ def api(req: https_fn.Request) -> https_fn.Response:
                 "discount_amount": 0,
                 "paid_amount": 50000,
                 "issued_coupon_status": "없음",
+                "requirements": data.get('requirements', ''),
                 "created_at": created_at
             })
             inserted_id = doc_ref.id
