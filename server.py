@@ -186,6 +186,10 @@ def init_db():
         c.execute("ALTER TABLE lesson_requests ADD COLUMN issued_coupon_status TEXT DEFAULT '없음'")
     except sqlite3.OperationalError:
         pass
+    try:
+        c.execute("ALTER TABLE lesson_requests ADD COLUMN requirements TEXT")
+    except sqlite3.OperationalError:
+        pass
         
     conn.commit()
     conn.close()
@@ -1126,8 +1130,8 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
             c = conn.cursor()
             
             # 레슨 매칭 신청 정보 저장
-            c.execute("INSERT INTO lesson_requests (user_id, user_name, user_contact, golf_course, lesson_date, lesson_time) VALUES (?, ?, ?, ?, ?, ?)",
-                      (data.get('user_id', 'APP_USER'), user_name, user_contact, data.get('golfCourse'), data.get('date'), data.get('time')))
+            c.execute("INSERT INTO lesson_requests (user_id, user_name, user_contact, golf_course, lesson_date, lesson_time, requirements) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                      (data.get('user_id', 'APP_USER'), user_name, user_contact, data.get('golfCourse'), data.get('date'), data.get('time'), data.get('requirements')))
             inserted_id = c.lastrowid
             
             # 일반 회원 테이블에 존재하지 않는 경우 자동 등록 (일반 회원 내역 연동)

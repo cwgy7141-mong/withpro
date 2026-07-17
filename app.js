@@ -532,6 +532,7 @@ const app = {
         const golfCourse = document.getElementById('lesson-golf-course') ? document.getElementById('lesson-golf-course').value.trim() : "";
         const date = document.getElementById('lesson-date').value;
         const time = document.getElementById('lesson-time').value;
+        const requirements = document.getElementById('lesson-requirements') ? document.getElementById('lesson-requirements').value.trim() : "";
         
         if (!userName) {
             alert("신청자 이름을 입력해 주세요.");
@@ -564,7 +565,7 @@ const app = {
             const response = await fetch('/api/request-lesson', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userName, userContact, golfCourse, date, time })
+                body: JSON.stringify({ userName, userContact, golfCourse, date, time, requirements })
             });
             const data = await response.json();
             
@@ -778,6 +779,10 @@ const app = {
                                 <span class="booking-detail-label">신청자명</span>
                                 <span class="booking-detail-value">${app.escapeHtml(data.user_name || '이름 없음')}</span>
                             </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">요구사항</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
+                            </li>
                         </ul>
                         <div style="font-size: 13px; color: var(--text-sub); line-height: 1.5; font-weight: 500; text-align: center; background-color: #f3f4f6; padding: 12px; border-radius: 8px;">
                             🔔 매칭이 완료되면 결제 요청 알림이 발송됩니다.
@@ -800,6 +805,10 @@ const app = {
                                 <span class="booking-detail-label">배정 프로</span>
                                 <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 회원 프로 (수락 대기)</span>
                             </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">요구사항</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
+                            </li>
                         </ul>
                         <div style="font-size: 13.5px; color: #b45309; line-height: 1.5; font-weight: 600; text-align: center; background-color: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
                             🔔 프로님이 수락하는 즉시 결제 링크가 자동으로 활성화됩니다.
@@ -821,6 +830,10 @@ const app = {
                             <li class="booking-detail-item">
                                 <span class="booking-detail-label">정산 방식</span>
                                 <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (55만 원)</span>
+                            </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">요구사항</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
                             </li>
                         </ul>
                         <div style="font-size: 13px; color: #065f46; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center; font-weight: 600;">
@@ -847,6 +860,10 @@ const app = {
                             <li class="booking-detail-item">
                                 <span class="booking-detail-label">${isDirect ? '정산 방식' : '결제 수단'}</span>
                                 <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 550,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
+                            </li>
+                            <li class="booking-detail-item">
+                                <span class="booking-detail-label">요구사항</span>
+                                <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
                             </li>
                         </ul>
                         ${app.getReviewSectionHtml(data)}
@@ -1009,6 +1026,10 @@ const app = {
                                     <span class="booking-detail-label">신청자명</span>
                                     <span class="booking-detail-value">${app.escapeHtml(data.user_name || '이름 없음')}</span>
                                 </li>
+                                <li class="booking-detail-item">
+                                    <span class="booking-detail-label">요구사항</span>
+                                    <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
+                                </li>
                             </ul>
                             <div style="font-size: 13px; color: var(--text-sub); line-height: 1.5; font-weight: 500; text-align: center; background-color: #f3f4f6; padding: 12px; border-radius: 8px;">
                                 🔔 매칭이 완료되면 결제 요청 알림이 발송됩니다.
@@ -1031,6 +1052,10 @@ const app = {
                                     <span class="booking-detail-label">배정 프로</span>
                                     <span class="booking-detail-value" style="color: #b45309; font-weight: 700;">KPGA/KLPGA 회원 프로 (수락 대기)</span>
                                 </li>
+                                <li class="booking-detail-item">
+                                    <span class="booking-detail-label">요구사항</span>
+                                    <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
+                                </li>
                             </ul>
                             <div style="font-size: 13.5px; color: #b45309; line-height: 1.5; font-weight: 600; text-align: center; background-color: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
                                 🔔 프로님이 수락하는 즉시 결제 링크가 자동으로 활성화됩니다.
@@ -1052,6 +1077,10 @@ const app = {
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">정산 방식</span>
                                     <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (55만 원)</span>
+                                </li>
+                                <li class="booking-detail-item">
+                                    <span class="booking-detail-label">요구사항</span>
+                                    <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
                                 </li>
                             </ul>
                             <div style="font-size: 13px; color: #065f46; background-color: #ECFDF5; padding: 10px; border-radius: 8px; text-align: center; font-weight: 600;">
@@ -1078,6 +1107,10 @@ const app = {
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">${isDirect ? '정산 방식' : '결제 수단'}</span>
                                     <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 550,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
+                                </li>
+                                <li class="booking-detail-item">
+                                    <span class="booking-detail-label">요구사항</span>
+                                    <span class="booking-detail-value">${app.escapeHtml(data.requirements || '없음')}</span>
                                 </li>
                             </ul>
                             ${app.getReviewSectionHtml(data)}
@@ -1850,6 +1883,10 @@ const app = {
                                 <span class="booking-detail-label">아마추어 고객</span>
                                 <span class="booking-detail-value">${app.escapeHtml(data.user_name || '아마추어')} 님</span>
                             </li>
+                            <li class="booking-detail-item" style="margin-bottom: 10px;">
+                                <span class="booking-detail-label">요구사항</span>
+                                <span class="booking-detail-value" style="font-weight: 700; color: var(--text-main);">${app.escapeHtml(data.requirements || '없음')}</span>
+                            </li>
                             <li class="booking-detail-item" style="margin-bottom: 0;">
                                 <span class="booking-detail-label">결제 금액</span>
                                 <span class="booking-detail-value" style="color: var(--accent-color); font-weight: 700; font-size: 16px;">50,000원</span>
@@ -1929,6 +1966,10 @@ const app = {
                             <li class="booking-detail-item" style="margin-bottom: 10px;">
                                 <span class="booking-detail-label">아마추어 고객</span>
                                 <span class="booking-detail-value">${app.escapeHtml(data.user_name || '아마추어')} 님</span>
+                            </li>
+                            <li class="booking-detail-item" style="margin-bottom: 10px;">
+                                <span class="booking-detail-label">요구사항</span>
+                                <span class="booking-detail-value" style="font-weight: 700; color: var(--text-main);">${app.escapeHtml(data.requirements || '없음')}</span>
                             </li>
                             <li class="booking-detail-item" style="margin-bottom: 0;">
                                 <span class="booking-detail-label">현장 정산 레슨비</span>

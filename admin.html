@@ -1598,6 +1598,12 @@
                         </div>
                     ` : '';
 
+                    const requirementsHtml = item.requirements ? `
+                        <div style="margin-top: 6px; font-size: 12px; color: #374151; font-weight: 600; background-color: #f3f4f6; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); max-width: 250px; line-height: 1.4; word-break: break-all;">
+                            💬 요구사항: ${this.escapeHtml(item.requirements)}
+                        </div>
+                    ` : '';
+
                     return `
                         <tr>
                             <td><strong>${dataList.length - idx}</strong></td>
@@ -1606,6 +1612,7 @@
                                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500;">📞 ${this.escapeHtml(item.user_contact || '-')}</div>
                                 <div style="font-size: 11px; color: #9ca3af; margin-top: 3px; font-weight: 500;">(ID: ${this.escapeHtml(item.user_id)})</div>
                                 ${proInfoHtml}
+                                ${requirementsHtml}
                                 ${reviewHtml}
                             </td>
                             <td><strong>${this.escapeHtml(item.golf_course)}</strong></td>
