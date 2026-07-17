@@ -2,5 +2,5 @@
   <text x="35" y="60" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="900" letter-spacing="-3">
     <tspan fill="#111111">with</tspan><tspan fill="#4CAF50" letter-spacing="-1.5">PRO</tspan>
   </text>
-  <path d="M 130 18 Q 177 0 224 18" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round" />
+  <path d="M 100 18 Q 147 0 194 18" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round" />
 </svg>
