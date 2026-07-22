@@ -16,7 +16,7 @@ def generate_new_icon():
         font_path = "arialbd.ttf"
         
     # Target width of the logo inside the 1024x1024 icon
-    target_logo_width = 750
+    target_logo_width = 820
     spacing = 15
     
     # Dynamically find the best font size to match target width
@@ -73,7 +73,7 @@ def generate_new_icon():
     arc_x1 = pro_x + int(w_pro) + arc_offset_x
     arc_y1 = logo_y + int(font_size * 0.18)
     
-    arc_width = 10 # Increased thickness for premium feel at large size
+    arc_width = 12 # Increased thickness for premium feel at large size
     draw.arc([arc_x0, arc_y0, arc_x1, arc_y1], start=195, end=345, fill=white, width=arc_width)
     
     # Target paths
