@@ -347,7 +347,66 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
                     if SMS_PROVIDER == "aligo":
                         send_aligo_alimtalk(clean_receiver, tpl_code, title, talk_message, link)
                     elif SMS_PROVIDER == "solapi":
-                        send_solapi_alimtalk(clean_receiver, tpl_code, talk_message, link, variables)
+                        # Solapi Template content mapping
+                        SOLAPI_TEMPLATES = {
+                            "KA01TP260703142423232bOZ7Y7LbJPm": "[withPRO] #{user_name}님, '#{golf_course}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다.",
+                            "KA01TP260703142719277lwSWCnovrkb": "[withPRO] #{pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: #{golf_course}\n- 일정: #{lesson_date} #{lesson_time}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요.",
+                            "KA01TP260703142908479UFKi4EGWn7q": "[withPRO] '#{golf_course}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: #{pro_name} 프로님 (#{pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다.",
+                            "KA01TP260703143048865jMgfLrtWr6j": "[withPRO] #{pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: #{customer_name}\n- 고객 연락처: #{customer_contact}\n- 골프장: #{golf_course}\n- 일정: #{lesson_date} #{lesson_time}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요."
+                        }
+                        
+                        # Check mapping for both constant names and constant values
+                        solapi_tpl_map = {
+                            "UI_6115": "KA01TP260703142423232bOZ7Y7LbJPm",
+                            "UI_6119": "KA01TP260703142719277lwSWCnovrkb",
+                            "UI_6120": "KA01TP260703142908479UFKi4EGWn7q",
+                            "UI_6121": "KA01TP260703143048865jMgfLrtWr6j",
+                            KAKAO_TPL_LESSON_REQUESTED: "KA01TP260703142423232bOZ7Y7LbJPm",
+                            KAKAO_TPL_MATCH_PROPOSAL: "KA01TP260703142719277lwSWCnovrkb",
+                            KAKAO_TPL_MATCH_SUCCESS: "KA01TP260703142908479UFKi4EGWn7q",
+                            KAKAO_TPL_MATCH_CONFIRMED: "KA01TP260703143048865jMgfLrtWr6j"
+                        }
+                        
+                        solapi_tpl_code = solapi_tpl_map.get(tpl_code, tpl_code)
+                        
+                        if solapi_tpl_code in SOLAPI_TEMPLATES:
+                            translated_vars = {}
+                            if variables:
+                                var_key_map = {
+                                    "#{고객명}": "#{user_name}",
+                                    "#{골프장}": "#{golf_course}",
+                                    "#{프로명}": "#{pro_name}",
+                                    "#{프로연락처}": "#{pro_contact}",
+                                    "#{고객연락처}": "#{customer_contact}"
+                                }
+                                for k, v in variables.items():
+                                    eng_key = var_key_map.get(k, k)
+                                    if solapi_tpl_code == "KA01TP260703143048865jMgfLrtWr6j" and eng_key == "#{user_name}":
+                                        translated_vars["#{customer_name}"] = v
+                                    else:
+                                        translated_vars[eng_key] = v
+                                        
+                                if "#{일정}" in variables:
+                                    val = variables["#{일정}"]
+                                    parts = val.split(" ")
+                                    translated_vars["#{lesson_date}"] = parts[0] if len(parts) > 0 else ""
+                                    translated_vars["#{lesson_time}"] = parts[1] if len(parts) > 1 else ""
+                                    
+                            if link:
+                                clean_link = link.replace("https://", "").replace("http://", "")
+                                translated_vars["#{link}"] = clean_link
+                                
+                            tpl_content = SOLAPI_TEMPLATES[solapi_tpl_code]
+                            for k, v in translated_vars.items():
+                                tpl_content = tpl_content.replace(k, str(v))
+                                
+                            talk_message = tpl_content
+                            variables = translated_vars
+                            tpl_code_to_send = solapi_tpl_code
+                        else:
+                            tpl_code_to_send = solapi_tpl_code
+                            
+                        send_solapi_alimtalk(clean_receiver, tpl_code_to_send, talk_message, link, variables)
                 else:
                     logging.info(f"[Kakao Alimtalk] No template mapping for: {template_type}")
         except Exception as ex:
