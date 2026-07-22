@@ -46,7 +46,7 @@ jobs:
         id: build_step
         run: |
           cd android-app
-          gradle wrapper --gradle-version 8.5
+          gradle wrapper --gradle-version 8.11.1
           chmod +x gradlew
           # Run build and save output to log
           ./gradlew bundleRelease > build.log 2>&1

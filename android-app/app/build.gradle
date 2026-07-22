@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'com.cwgy.withpro'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.cwgy.withproapp"
         minSdk 21
-        targetSdk 35
+        targetSdk 36
         versionCode 3
         versionName "1.0.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
