@@ -222,6 +222,7 @@ KAKAO_TPL_PRO_PAYMENT_REQUEST = "pFAajhsXGk" # 프로 수수료 납부 독촉 �
 KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITH_COUPON = "UI_6516" # 쿠폰 포함 후기 요청 알림
 KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITHOUT_COUPON = "UI_6517" # 쿠폰 미포함 후기 요청 알림
 KAKAO_TPL_PRO_REGISTRATION_REQUESTED = "UI_6518"
+KAKAO_TPL_PRO_APPROVED = "UI_6519"
 
 def send_aligo_alimtalk(receiver, tpl_code, subject, message, link=None):
     if not SMS_API_KEY or not SMS_USER_ID or not SMS_SENDER_NUMBER or not KAKAO_SENDER_KEY:
@@ -428,6 +429,8 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
             tpl_code = KAKAO_TPL_AMATEUR_REVIEW_REQUEST_WITHOUT_COUPON
         elif template_type == "pro_registration_requested":
             tpl_code = KAKAO_TPL_PRO_REGISTRATION_REQUESTED
+        elif template_type == "pro_approved":
+            tpl_code = KAKAO_TPL_PRO_APPROVED
             
         # 템플릿 코드가 설정되어 있는 경우 알림톡 전송 시도
         if tpl_code:
@@ -440,7 +443,8 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
                     "KA01TP260703142719277lwSWCnovrkb": "[withPRO] #{pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: #{golf_course}\n- 일정: #{lesson_date} #{lesson_time}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요.",
                     "KA01TP260703142908479UFKi4EGWn7q": "[withPRO] '#{golf_course}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: #{pro_name} 프로님 (#{pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다.",
                     "KA01TP260703143048865jMgfLrtWr6j": "[withPRO] #{pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: #{customer_name}\n- 고객 연락처: #{customer_contact}\n- 골프장: #{golf_course}\n- 일정: #{lesson_date} #{lesson_time}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요.",
-                    "KA01TP260703143500000abcde": "[withPRO] #{pro_name} 프로님, 파트너 프로 등록 신청이 정상 접수되었습니다. 서류 심사 후 승인 여부를 안내해 드리겠습니다."
+                    "KA01TP260703143500000abcde": "[withPRO] #{pro_name} 프로님, 파트너 프로 등록 신청이 정상 접수되었습니다. 서류 심사 후 승인 여부를 안내해 드리겠습니다.",
+                    "KA01TP260703143600000approved": "[withPRO] #{pro_name} 프로님, 제출해 주신 프로 회원 자격 심사가 승인되었습니다. 지금부터 레슨 프로로 정상 활동 가능합니다."
                 }
                 
                 # Check mapping for both constant names and constant values
@@ -450,11 +454,13 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
                     "UI_6120": "KA01TP260703142908479UFKi4EGWn7q",
                     "UI_6121": "KA01TP260703143048865jMgfLrtWr6j",
                     "UI_6518": "KA01TP260703143500000abcde",
+                    "UI_6519": "KA01TP260703143600000approved",
                     KAKAO_TPL_LESSON_REQUESTED: "KA01TP260703142423232bOZ7Y7LbJPm",
                     KAKAO_TPL_MATCH_PROPOSAL: "KA01TP260703142719277lwSWCnovrkb",
                     KAKAO_TPL_MATCH_SUCCESS: "KA01TP260703142908479UFKi4EGWn7q",
                     KAKAO_TPL_MATCH_CONFIRMED: "KA01TP260703143048865jMgfLrtWr6j",
-                    KAKAO_TPL_PRO_REGISTRATION_REQUESTED: "KA01TP260703143500000abcde"
+                    KAKAO_TPL_PRO_REGISTRATION_REQUESTED: "KA01TP260703143500000abcde",
+                    KAKAO_TPL_PRO_APPROVED: "KA01TP260703143600000approved"
                 }
                 
                 solapi_tpl_code = solapi_tpl_map.get(tpl_code, tpl_code)
@@ -1608,6 +1614,20 @@ if (firebaseConfig && firebaseConfig.apiKey) {{
                         "승인 상태": "승인 완료 (활동 개시 가능)"
                     }
                     send_discord_notification("🏌️‍♂️ KPGA/KLPGA 회원 프로 파트너 심사 승인 완료", fields)
+                    
+                    # Alimtalk notify to approved pro
+                    pro_name = row['name'] if row['name'] else "레슨 프로"
+                    title = "🏌️‍♂️ 파트너 프로 심사 승인 완료"
+                    body = f"[withPRO] {pro_name} 프로님, 제출해 주신 프로 회원 자격 심사가 승인되었습니다. 지금부터 레슨 프로로 정상 활동 가능합니다."
+                    dispatch_push_notification(
+                        row['contact'],
+                        title,
+                        body,
+                        template_type="pro_approved",
+                        variables={
+                            "#{프로명}": pro_name
+                        }
+                    )
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
