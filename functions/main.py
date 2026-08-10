@@ -357,7 +357,7 @@ def dispatch_push_notification(receiver, title, body, link=None, template_type=N
                         SOLAPI_TEMPLATES = {
                             "KA01TP260703142423232bOZ7Y7LbJPm": "[withPRO] #{user_name}님, '#{golf_course}' 골프장 필드레슨 매칭 요청이 안전하게 접수되었습니다. 일정에 맞는 최고의 프로님을 배정 후 즉시 알림톡 또는 앱 푸시 알림으로 알려드리겠습니다.",
                             "KA01TP260703142719277lwSWCnovrkb": "[withPRO] #{pro_name} 프로님, 새로운 필드레슨 매칭이 배정되었습니다.\n- 골프장: #{golf_course}\n- 일정: #{lesson_date} #{lesson_time}\n수락 여부를 확인하시고 최종 결정을 선택해 주세요.",
-                            "KA01TP260703142908479UFKi4EGWn7q": "[withPRO] '#{golf_course}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: #{pro_name} 프로님 (#{pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다.",
+                            "KA01TP260703142908479UFKi4EGWn7q": "[withPRO] '#{golf_course}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: #{pro_name} 프로님 (#{pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(50만 원)해 주시면 됩니다.",
                             "KA01TP260703143048865jMgfLrtWr6j": "[withPRO] #{pro_name} 프로님, 필드레슨 매칭이 최종 확정되었습니다.\n- 아마추어 고객명: #{customer_name}\n- 고객 연락처: #{customer_contact}\n- 골프장: #{golf_course}\n- 일정: #{lesson_date} #{lesson_time}\n라운딩 전 고객님께 가벼운 인사 전화를 드려 주세요.",
                             "KA01TP260727131431644tJpR3QF4WrN": "[withPRO] #{pro_name} 프로님, 파트너 프로 등록 신청이 정상 접수되었습니다. 서류 심사 후 승인 여부를 안내해 드리겠습니다.",
                             "KA01TP260727132349323zeKHb4Ut2uo": "[withPRO] #{pro_name} 프로님, 제출해 주신 프로 회원 자격 심사가 승인되었습니다. 지금부터 레슨 프로로 정상 활동 가능합니다."
@@ -833,14 +833,14 @@ def api(req: https_fn.Request) -> https_fn.Response:
                     "티오프 시간": req_data.get('lesson_time'),
                     "매칭 프로": f"{pro_name} (자격번호: {pro_cert})",
                     "매칭 상태": "최종 확정 (현장 직거래)",
-                    "레슨비": "550,000원 (현장 직접 정산)",
-                    "플랫폼 수수료": "50,000원 (프로 사후 납부)"
+                    "레슨비": "500,000원 (현장 직접 정산)",
+                    # "플랫폼 수수료": "50,000원 (프로 사후 납부)" # 비활성화 보존
                 }
                 send_discord_notification("🏌️‍♂️ 필드레슨 매칭 최종 확정 (현장 직거래)", fields)
                 
                 # App Push to amateur customer
                 customer_title = "🎉 필드레슨 매칭 최종 확정!"
-                customer_body = f"[withPRO] '{req_data.get('golf_course')}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(55만 원)해 주시면 됩니다."
+                customer_body = f"[withPRO] '{req_data.get('golf_course')}' 필드레슨 매칭이 최종 확정되었습니다.\n- 배정 프로: {pro_name} 프로님 ({pro_contact})\n현장 레슨비는 라운딩 종료 후 프로님께 직접 결제(50만 원)해 주시면 됩니다."
                 customer_link = f"https://withpro.kr/index.html?view=my-bookings&id={req_id}"
                 dispatch_push_notification(
                     req_data.get('user_contact'), 
@@ -1571,52 +1571,55 @@ def check_pro_commissions_scheduled(event: scheduler_fn.ScheduledEvent) -> None:
             
             # Process only if rounding was yesterday or earlier
             if lesson_date <= yesterday_str:
-                if pro_notified == 0:
-                    title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
-                    body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
-                    pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
-                    dispatch_push_notification(
-                        pro_contact, 
-                        title, 
-                        body, 
-                        pro_link, 
-                        template_type="pro_payment_request",
-                        variables={
-                            "#{프로명}": pro_name,
-                            "#{일정}": lesson_date,
-                            "#{골프장}": golf_course
-                        }
-                    )
-                    db.collection("lesson_requests").document(req_id).update({"pro_notified": 1})
-                    
-                elif pro_notified == 1:
-                    # Suspend pro
-                    if pro_status != "정지":
-                        db.collection("pro_users").document(str(pro_id)).update({"status": "정지"})
-                        send_discord_notification("🚨 파트너 프로 활동 정지 (수수료 미납)", {
-                            "pro_name": pro_name,
-                            "pro_contact": pro_contact,
-                            "golf_course": golf_course,
-                            "lesson_date": lesson_date,
-                            "reason": "수수료(5만원) 미납으로 인한 정지"
-                        })
+                # 플랫폼 수수료 알림 및 활동 정지 로직 비활성화 보존
+                pass
+                if False:  # 수수료 정지/알림 비활성화
+                    if pro_notified == 0:
+                        title = "📢 [withPRO] 라운딩 완료 및 플랫폼 수수료 결제 안내"
+                        body = f"[withPRO] {pro_name} 프로님, 어제 {lesson_date} {golf_course} 라운딩이 완료되었습니다. 오늘까지 플랫폼 이용 수수료(5만원) 결제를 완료해 주시기 바랍니다. 미결제 시 파트너 활동이 정지(매칭 배정 불가) 처리될 수 있습니다. 아래 버튼을 눌러 즉시 결제해 주세요."
+                        pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
+                        dispatch_push_notification(
+                            pro_contact, 
+                            title, 
+                            body, 
+                            pro_link, 
+                            template_type="pro_payment_request",
+                            variables={
+                                "#{프로명}": pro_name,
+                                "#{일정}": lesson_date,
+                                "#{골프장}": golf_course
+                            }
+                        )
+                        db.collection("lesson_requests").document(req_id).update({"pro_notified": 1})
                         
-                    title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
-                    body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
-                    pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
-                    dispatch_push_notification(
-                        pro_contact, 
-                        title, 
-                        body, 
-                        pro_link, 
-                        template_type="pro_commission_due",
-                        variables={
-                            "#{프로명}": pro_name,
-                            "#{일정}": lesson_date,
-                            "#{골프장}": golf_course
-                        }
-                    )
-                    db.collection("lesson_requests").document(req_id).update({"pro_notified": 2})
+                    elif pro_notified == 1:
+                        # Suspend pro
+                        if pro_status != "정지":
+                            db.collection("pro_users").document(str(pro_id)).update({"status": "정지"})
+                            send_discord_notification("🚨 파트너 프로 활동 정지 (수수료 미납)", {
+                                "pro_name": pro_name,
+                                "pro_contact": pro_contact,
+                                "golf_course": golf_course,
+                                "lesson_date": lesson_date,
+                                "reason": "수수료(5만원) 미납으로 인한 정지"
+                            })
+                            
+                        title = "🚨 [withPRO] 라운딩 수수료 미납 및 파트너 정지 안내"
+                        body = f"[withPRO] {pro_name} 프로님, {lesson_date} {golf_course} 라운딩이 완료되었습니다. 기한 내 수수료 5만원 입금이 확인되지 않아 파트너 프로 활동이 정지되었습니다. 5만원 입금이 완료될 때까지 활동 정지 및 매칭 배정 불가 상태가 유지됩니다. 아래 버튼을 눌러 수수료를 즉시 결제하시면 즉시 정지가 해제됩니다."
+                        pro_link = f"https://withpro.kr/index.html?view=pro-pay-direct&id={req_id}&cert={pro_cert}"
+                        dispatch_push_notification(
+                            pro_contact, 
+                            title, 
+                            body, 
+                            pro_link, 
+                            template_type="pro_commission_due",
+                            variables={
+                                "#{프로명}": pro_name,
+                                "#{일정}": lesson_date,
+                                "#{골프장}": golf_course
+                            }
+                        )
+                        db.collection("lesson_requests").document(req_id).update({"pro_notified": 2})
                     
     except Exception as e:
         logging.error(f"[check_pro_commissions_scheduled Error] {e}")

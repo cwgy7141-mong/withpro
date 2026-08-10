@@ -829,7 +829,7 @@ const app = {
                             </li>
                             <li class="booking-detail-item">
                                 <span class="booking-detail-label">정산 방식</span>
-                                <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (55만 원)</span>
+                                <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (50만 원)</span>
                             </li>
                             <li class="booking-detail-item">
                                 <span class="booking-detail-label">요구사항</span>
@@ -859,7 +859,7 @@ const app = {
                             </li>
                             <li class="booking-detail-item">
                                 <span class="booking-detail-label">${isDirect ? '정산 방식' : '결제 수단'}</span>
-                                <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 550,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
+                                <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 500,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
                             </li>
                             <li class="booking-detail-item">
                                 <span class="booking-detail-label">요구사항</span>
@@ -1076,7 +1076,7 @@ const app = {
                                 </li>
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">정산 방식</span>
-                                    <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (55만 원)</span>
+                                    <span class="booking-detail-value" style="color: var(--primary-color); font-weight: 800;">현장 직거래 (50만 원)</span>
                                 </li>
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">요구사항</span>
@@ -1106,7 +1106,7 @@ const app = {
                                 </li>
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">${isDirect ? '정산 방식' : '결제 수단'}</span>
-                                    <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 550,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
+                                    <span class="booking-detail-value">${isDirect ? '현장 직거래 (라운딩 종료 후 프로님께 레슨비 500,000원 직접 정산)' : app.escapeHtml(data.pay_method || '간편결제')}</span>
                                 </li>
                                 <li class="booking-detail-item">
                                     <span class="booking-detail-label">요구사항</span>
@@ -1582,7 +1582,8 @@ const app = {
                                 자격번호: ${app.escapeHtml(profile.cert_number)}
                             </div>
                             <div style="font-size: 12.5px; color: #991b1b; font-weight: 500; line-height: 1.4;">
-                                🚨 라운딩 다음 날 수수료 미납으로 인해 파트너 활동이 정지되었습니다. 미납된 수수료 결제를 완료하시면 즉시 정지가 해제됩니다.
+                                🚨 파트너 프로 활동이 일시 정지되었습니다. 관리자에게 문의해 주세요.
+                                <!-- 보존: 라운딩 다음 날 수수료 미납으로 인해 파트너 활동이 정지되었습니다. 미납된 수수료 결제를 완료하시면 즉시 정지가 해제됩니다. -->
                             </div>
                         </div>
                     </div>
@@ -1650,6 +1651,7 @@ const app = {
                     } else if (match.status === '결제완료') {
                         statusBadge = `<span class="pro-match-status-badge paid">예약 완료 💰</span>`;
                         
+                        /* 플랫폼 수수료 결제 UI 비활성화 보존
                         if (match.pro_pay_status === '결제완료') {
                             statusBadge += `<span class="pro-match-status-badge paid" style="margin-left: 4px; background-color: #d1fae5; color: #065f46;">수수료 납부완료 ✅</span>`;
                         } else {
@@ -1679,6 +1681,7 @@ const app = {
                                 `;
                             }
                         }
+                        */
                     }
                     return `
                         <div class="pro-match-card">
@@ -1973,13 +1976,13 @@ const app = {
                             </li>
                             <li class="booking-detail-item" style="margin-bottom: 0;">
                                 <span class="booking-detail-label">현장 정산 레슨비</span>
-                                <span class="booking-detail-value" style="color: var(--accent-color); font-weight: 700; font-size: 16px;">550,000원</span>
+                                <span class="booking-detail-value" style="color: var(--accent-color); font-weight: 700; font-size: 16px;">500,000원</span>
                             </li>
                         </ul>
                     </div>
 
                     <div style="font-size: 13.5px; color: var(--text-sub); line-height: 1.5; padding: 12px; border-radius: 8px; background-color: var(--input-bg); margin-bottom: 24px; font-weight: 500;">
-                        💡 <strong>알아두세요:</strong> 프로 수락 즉시 매칭이 최종 확정(예약 완료)됩니다. 레슨비(55만 원)는 라운딩 종료 후 현장에서 직접 정산받으시며, 코스 내 프로님 제반 비용(그린피/카트비/캐디피)은 고객 전액 부담 조건입니다.
+                        💡 <strong>알아두세요:</strong> 프로 수락 즉시 매칭이 최종 확정(예약 완료)됩니다. 레슨비(50만 원)는 라운딩 종료 후 현장에서 직접 정산받으시며, 코스 내 프로님 제반 비용(그린피/카트비/캐디피)은 고객 전액 부담 조건입니다.
                     </div>
 
                     <div class="grid-2 gap-2" style="display: flex; gap: 10px;">
